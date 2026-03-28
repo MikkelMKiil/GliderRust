@@ -1,5 +1,6 @@
 pub mod bot;
 pub mod config;
+pub mod input;
 pub mod memory;
 pub mod net;
 pub mod offsets;

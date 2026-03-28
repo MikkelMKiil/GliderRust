@@ -7,8 +7,8 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            telemetry_enabled: false,
-            memory_poll_ms: 100,
+            telemetry_enabled: true,
+            memory_poll_ms: 2500,
         }
     }
 }
