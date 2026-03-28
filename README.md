@@ -6,7 +6,13 @@ Windows-only single-process Rust rebuild of MMOGlider.
 
 - Project skeleton and AI-first module boundaries created.
 - Initial profile XML parser and tests included.
-- Memory layer currently read-only stub; Win32 attach/read implementation is next.
+- Memory layer includes read-only Win32 attach/read telemetry for WotLK 3.3.5a.
+
+## Memory reading rule
+
+- Memory reads must be deterministic single-path reads.
+- Do not add fallback offsets, probe lists, default-value substitutions, or alternate pointer-chain fallbacks in memory code.
+- When a read fails, surface the failure in diagnostics/errors and fix the canonical offset/path instead of trying alternatives.
 
 ## Quick start
 
