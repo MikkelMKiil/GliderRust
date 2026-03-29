@@ -1,5 +1,7 @@
 pub mod state;
 
+use serde::{Deserialize, Serialize};
+
 use crate::memory::types::MemorySnapshot;
 use crate::profile::GlideProfile;
 use crate::input::InputCommand;
@@ -10,7 +12,7 @@ const WAYPOINT_RADIUS: f32 = 2.0;
 const HEADING_TURN_THRESHOLD_RAD: f32 = 0.25;
 const MOVE_FORWARD_DISTANCE_MIN: f32 = 1.5;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NavigationOutput {
     pub desired_heading_rad: Option<f32>,
     pub heading_error_rad: Option<f32>,

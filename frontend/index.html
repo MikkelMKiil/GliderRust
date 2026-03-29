@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GliderRust</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>GliderRust</h1>
+        <p id="runtimeHint">Embedded UI shell (Tauri-ready)</p>
+      </div>
+      <div class="badgeRow">
+        <span class="pill" id="attachPill">Detached</span>
+        <span class="pill" id="botPill">Stopped</span>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="home">Home</button>
+      <button class="tab" data-tab="profiles">Profiles</button>
+      <button class="tab" data-tab="settings">Settings</button>
+      <button class="tab" data-tab="legacy">Legacy Remaster</button>
+      <button class="tab" data-tab="debug">Debug</button>
+    </nav>
+
+    <section class="panel active" id="panel-home">
+      <article class="card">
+        <h2>Bot Controls</h2>
+        <div class="row gap">
+          <button id="startBtn" class="btn success">Start</button>
+          <button id="pauseBtn" class="btn warning">Pause</button>
+          <button id="stopBtn" class="btn danger">Stop</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Runtime</h2>
+        <dl class="kv">
+          <div><dt>State</dt><dd id="stateText">-</dd></div>
+          <div><dt>Status</dt><dd id="statusText">-</dd></div>
+          <div><dt>Profile</dt><dd id="profileText">-</dd></div>
+          <div><dt>Waypoints</dt><dd id="waypointText">-</dd></div>
+          <div><dt>Poll</dt><dd id="pollText">-</dd></div>
+        </dl>
+      </article>
+
+      <article class="card">
+        <h2>Snapshot</h2>
+        <pre id="snapshotPreview">No snapshot yet</pre>
+      </article>
+    </section>
+
+    <section class="panel" id="panel-profiles">
+      <article class="card">
+        <h2>Profile</h2>
+        <div class="row gap">
+          <input id="profilePath" type="text" placeholder="Path to profile XML">
+          <button id="loadProfileBtn" class="btn">Load</button>
+          <button id="clearProfileBtn" class="btn">Clear</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" id="panel-settings">
+      <article class="card">
+        <h2>Process</h2>
+        <div class="row gap">
+          <input id="pidInput" type="number" min="1" placeholder="PID">
+          <button id="attachPidBtn" class="btn">Attach PID</button>
+          <button id="autoAttachBtn" class="btn">Auto-Attach WoW</button>
+          <button id="detachBtn" class="btn">Detach</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Configuration</h2>
+        <div class="row gap">
+          <label for="pollInput">Poll Interval (ms)</label>
+          <input id="pollInput" type="number" min="100" max="5000" value="2500">
+          <button id="setPollBtn" class="btn">Apply</button>
+        </div>
+        <div class="row gap">
+          <label>
+            <input id="telemetryInput" type="checkbox" checked>
+            Telemetry Enabled
+          </label>
+          <button id="setTelemetryBtn" class="btn">Apply</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" id="panel-legacy">
+      <article class="card">
+        <h2>Legacy WinForms Parity</h2>
+        <div class="legacyToolbar">
+          <div class="legacyStats">
+            <span class="pill">Total: <strong id="legacyTotalCount">0</strong></span>
+            <span class="pill">Visible: <strong id="legacyVisibleCount">0</strong></span>
+            <span class="pill">Buttons: <strong id="legacyButtonCount">0</strong></span>
+            <span class="pill">Radios: <strong id="legacyRadioCount">0</strong></span>
+          </div>
+          <div class="row gap">
+            <input id="legacySearch" type="text" placeholder="Filter by form, control, label, or handler">
+            <label class="toggleLabel">
+              <input id="showRadioControls" type="checkbox" checked>
+              Include radio controls
+            </label>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Legacy Control Map</h2>
+        <div id="legacyForms" class="legacyForms"></div>
+      </article>
+
+      <article class="card">
+        <h2>Legacy Action Log</h2>
+        <pre id="legacyActionLog">No legacy actions yet</pre>
+      </article>
+    </section>
+
+    <section class="panel" id="panel-debug">
+      <article class="card">
+        <h2>Diagnostics</h2>
+        <pre id="diagText">No diagnostics yet</pre>
+      </article>
+    </section>
+
+    <footer class="statusBar" id="statusBar">Ready</footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

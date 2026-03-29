@@ -86,8 +86,8 @@ pub fn glass_frame_inset() -> Frame {
         .stroke(Stroke::new(1.0, GLASS_BORDER))
 }
 
-/// Draw a glass card and then paint a specular highlight strip along its top
-/// edge to simulate the LiquidGlass rim-lighting look.
+/// Draw a glass card and then paint a soft top glint to simulate
+/// liquid-glass rim lighting without a hard white line.
 pub fn glass_card<R>(
     ui: &mut egui::Ui,
     add_contents: impl FnOnce(&mut egui::Ui) -> R,
@@ -106,13 +106,132 @@ pub fn glass_card_raised<R>(
     inner.inner
 }
 
-fn paint_specular(ui: &egui::Ui, rect: egui::Rect, corner_r: u8) {
-    let inset = corner_r as f32;
-    let spec = egui::Rect::from_min_size(
-        rect.min + egui::vec2(inset, 1.5),
-        egui::vec2((rect.width() - inset * 2.0).max(0.0), 1.5),
+pub fn paint_card_top_glint(ui: &egui::Ui, rect: egui::Rect, _corner_r: u8) {
+    paint_top_glint(ui, rect, 0.52, 2.8, 6.8, 1.8, 18, 24);
+}
+
+pub fn paint_button_top_glint(ui: &egui::Ui, rect: egui::Rect) {
+    paint_top_glint(ui, rect, 0.46, 6.2, 5.0, 1.4, 14, 20);
+}
+
+pub fn paint_top_glint(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    width_ratio: f32,
+    top_offset: f32,
+    soft_height: f32,
+    core_height: f32,
+    soft_alpha: u8,
+    core_alpha: u8,
+) {
+    if rect.width() <= 0.0 || rect.height() <= 0.0 {
+        return;
+    }
+
+    let max_width = (rect.width() - 6.0).max(10.0);
+    let glint_width = (rect.width() * width_ratio).clamp(10.0, max_width);
+    if glint_width <= 0.0 {
+        return;
+    }
+
+    let center_x = rect.center().x;
+    let left = center_x - glint_width * 0.5;
+    let right = center_x + glint_width * 0.5;
+    let soft_top = rect.top() + top_offset;
+
+    paint_glint_strip(ui, rect, left, right, soft_top, soft_height, soft_alpha, 0.24);
+
+    let core_inset = glint_width * 0.16;
+    let core_top = soft_top + ((soft_height - core_height) * 0.25).clamp(0.0, 2.0);
+    paint_glint_strip(
+        ui,
+        rect,
+        left + core_inset,
+        right - core_inset,
+        core_top,
+        core_height,
+        core_alpha,
+        0.35,
     );
-    ui.painter().rect_filled(spec, CornerRadius::same(1), GLASS_SPECULAR);
+}
+
+fn paint_glint_strip(
+    ui: &egui::Ui,
+    clip_rect: egui::Rect,
+    mut left: f32,
+    mut right: f32,
+    y_top: f32,
+    height: f32,
+    alpha: u8,
+    edge_fade_ratio: f32,
+) {
+    if alpha == 0 || height <= 0.0 {
+        return;
+    }
+
+    left = left.max(clip_rect.left());
+    right = right.min(clip_rect.right());
+    if right - left < 2.0 {
+        return;
+    }
+
+    let y0 = y_top.max(clip_rect.top());
+    let y1 = (y_top + height).min(clip_rect.bottom());
+    if y1 <= y0 {
+        return;
+    }
+
+    let fade = ((right - left) * edge_fade_ratio).clamp(2.0, (right - left) * 0.45);
+    let x1 = (left + fade).min(right);
+    let x2 = (right - fade).max(x1);
+
+    let top_color = Color32::from_rgba_premultiplied(255, 255, 255, alpha);
+    let transparent = Color32::from_rgba_premultiplied(0, 0, 0, 0);
+
+    let mut mesh = egui::epaint::Mesh::default();
+    let top_row = [
+        egui::pos2(left, y0),
+        egui::pos2(x1, y0),
+        egui::pos2(x2, y0),
+        egui::pos2(right, y0),
+    ];
+    let bottom_row = [
+        egui::pos2(left, y1),
+        egui::pos2(x1, y1),
+        egui::pos2(x2, y1),
+        egui::pos2(right, y1),
+    ];
+
+    for (i, pos) in top_row.into_iter().enumerate() {
+        let color = if i == 0 || i == 3 { transparent } else { top_color };
+        mesh.vertices.push(egui::epaint::Vertex {
+            pos,
+            uv: egui::pos2(0.0, 0.0),
+            color,
+        });
+    }
+
+    for pos in bottom_row {
+        mesh.vertices.push(egui::epaint::Vertex {
+            pos,
+            uv: egui::pos2(0.0, 0.0),
+            color: transparent,
+        });
+    }
+
+    for i in 0..3u32 {
+        let t0 = i;
+        let t1 = i + 1;
+        let b0 = i + 4;
+        let b1 = i + 5;
+        mesh.indices.extend_from_slice(&[t0, t1, b1, t0, b1, b0]);
+    }
+
+    ui.painter().add(Shape::Mesh(Arc::new(mesh)));
+}
+
+fn paint_specular(ui: &egui::Ui, rect: egui::Rect, corner_r: u8) {
+    paint_card_top_glint(ui, rect, corner_r);
 }
 
 // ── Ambient background ────────────────────────────────────────────────────────

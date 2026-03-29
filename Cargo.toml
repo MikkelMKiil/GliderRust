@@ -21,6 +21,9 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 thiserror = "2"
 rfd = "0.14"
+wry = "0.55"
+tao = "0.35"
+url = "2.5"
 
 [dev-dependencies]
 tokio-test = "0.4"

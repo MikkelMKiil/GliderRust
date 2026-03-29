@@ -1,0 +1,353 @@
+:root {
+  --bg: #0b1220;
+  --surface: #152236;
+  --surface-2: #1c2c45;
+  --line: #3a4c69;
+  --text: #e6eef9;
+  --text-dim: #98a7bc;
+  --ok: #3cd296;
+  --warn: #efc04a;
+  --danger: #f06c6c;
+  --focus: #5db6ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 500px at 10% -10%, #2a3b66 0%, transparent 60%),
+    radial-gradient(900px 400px at 95% 10%, #263c5d 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font: 14px/1.5 "Segoe UI", Tahoma, sans-serif;
+}
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+
+h2 {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+#runtimeHint {
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.badgeRow {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-dim);
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #20385a;
+  color: var(--focus);
+  border-color: #4f79a7;
+}
+
+.panel {
+  display: none;
+  gap: 12px;
+}
+
+.panel.active {
+  display: grid;
+}
+
+.card {
+  background: linear-gradient(180deg, #1b2a43 0%, #17263b 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gap {
+  gap: 8px;
+}
+
+input[type="text"],
+input[type="number"] {
+  min-width: 240px;
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+input:focus,
+button:focus {
+  outline: 2px solid color-mix(in srgb, var(--focus) 70%, transparent);
+  outline-offset: 1px;
+}
+
+.btn {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.btn.success {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 50%, var(--line));
+}
+
+.btn.warning {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--line));
+}
+
+.btn.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 50%, var(--line));
+}
+
+.kv {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 8px 14px;
+}
+
+.kv div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dashed #2f3f59;
+  padding-bottom: 4px;
+}
+
+.kv dt {
+  color: var(--text-dim);
+}
+
+.kv dd {
+  margin: 0;
+}
+
+pre {
+  margin: 0;
+  background: #0f1728;
+  border: 1px solid #273853;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 280px;
+  overflow: auto;
+  color: #c6d4e8;
+}
+
+.statusBar {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  color: var(--text-dim);
+}
+
+.legacyToolbar {
+  display: grid;
+  gap: 10px;
+}
+
+.legacyStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.legacyStats strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.toggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.legacyForms {
+  display: grid;
+  gap: 10px;
+}
+
+.legacyFormCard {
+  border: 1px solid #32445f;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #17263c 0%, #142236 100%);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.legacyFormHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.legacyFormHeader h3 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  color: #d6e4f7;
+}
+
+.legacyControlCount {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.legacyControlsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.legacyControl {
+  border: 1px solid #2f4260;
+  border-radius: 10px;
+  background: #102138;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.legacyBtn {
+  width: 100%;
+  text-align: left;
+  font-weight: 600;
+}
+
+.legacyBtn.radio {
+  border-style: dashed;
+}
+
+.legacyBtn.selected {
+  border-color: color-mix(in srgb, var(--ok) 58%, var(--line));
+  color: var(--ok);
+}
+
+.legacyMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.legacyCode {
+  font-size: 11px;
+  color: #9eb3cd;
+}
+
+.chip {
+  border: 1px solid #3a4c68;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  color: #b8c9df;
+  background: #1a2c46;
+}
+
+.chip.live {
+  color: #9ef0ce;
+  border-color: #2f6d53;
+}
+
+.chip.local {
+  color: #b4dcff;
+  border-color: #3b5f88;
+}
+
+.chip.placeholder {
+  color: #e8c89d;
+  border-color: #7a5a33;
+}
+
+.chip.error {
+  color: #ffb0b0;
+  border-color: #844;
+}
+
+#legacyActionLog {
+  min-height: 130px;
+}
+
+@media (max-width: 680px) {
+  .topbar {
+    flex-direction: column;
+  }
+
+  .kv {
+    grid-template-columns: 1fr;
+  }
+
+  .legacyControlsGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Default)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MemorySnapshot {
     pub player_name: String,
     pub player_guid: Option<u64>,

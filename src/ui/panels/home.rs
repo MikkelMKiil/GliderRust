@@ -121,13 +121,7 @@ fn draw_entity_card(
             draw_hp_bar(ui, cur_hp, max_hp);
         });
 
-    // Specular highlight
-    let rect = resp.response.rect;
-    let spec = egui::Rect::from_min_size(
-        rect.min + egui::vec2(20.0, 1.5),
-        egui::vec2((rect.width() - 40.0).max(0.0), 1.5),
-    );
-    ui.painter().rect_filled(spec, CornerRadius::same(1), theme::GLASS_SPECULAR);
+    theme::paint_card_top_glint(ui, resp.response.rect, 20);
 }
 
 fn draw_empty_target_card(ui: &mut egui::Ui) {
@@ -145,12 +139,7 @@ fn draw_empty_target_card(ui: &mut egui::Ui) {
             draw_hp_bar(ui, None, None);
         });
 
-    let rect = resp.response.rect;
-    let spec = egui::Rect::from_min_size(
-        rect.min + egui::vec2(20.0, 1.5),
-        egui::vec2((rect.width() - 40.0).max(0.0), 1.5),
-    );
-    ui.painter().rect_filled(spec, CornerRadius::same(1), theme::GLASS_SPECULAR);
+    theme::paint_card_top_glint(ui, resp.response.rect, 20);
 }
 
 // ── Bot status + controls card ────────────────────────────────────────────────
@@ -162,7 +151,7 @@ fn draw_status_controls_card(
     cycle_stats: &CycleStats,
     status_message: &mut String,
 ) {
-    let resp = Frame::new()
+    Frame::new()
         .fill(theme::GLASS_FILL)
         .inner_margin(Margin::same(16))
         .corner_radius(CornerRadius::same(20))
@@ -198,16 +187,15 @@ fn draw_status_controls_card(
                 let btn_w = (ui.available_width() - 16.0) / 3.0;
 
                 // Start
-                if ui
-                    .add(
-                        egui::Button::new(RichText::new("Start").color(theme::ACCENT_GREEN).size(14.0).strong())
-                            .fill(Color32::from_rgba_premultiplied(12, 48, 28, 200))
-                            .stroke(Stroke::new(1.0, theme::ACCENT_GREEN))
-                            .min_size(egui::vec2(btn_w, 44.0))
-                            .corner_radius(CornerRadius::same(22)),
-                    )
-                    .clicked()
-                {
+                let start_resp = ui.add(
+                    egui::Button::new(RichText::new("Start").color(theme::ACCENT_GREEN).size(14.0).strong())
+                        .fill(Color32::from_rgba_premultiplied(12, 48, 28, 200))
+                        .stroke(Stroke::new(1.0, theme::ACCENT_GREEN))
+                        .min_size(egui::vec2(btn_w, 44.0))
+                        .corner_radius(CornerRadius::same(22)),
+                );
+                theme::paint_button_top_glint(ui, start_resp.rect);
+                if start_resp.clicked() {
                     bot.start();
                     *status_message = "Bot started".to_string();
                 }
@@ -215,16 +203,15 @@ fn draw_status_controls_card(
                 ui.add_space(8.0);
 
                 // Pause
-                if ui
-                    .add(
-                        egui::Button::new(RichText::new("Pause").color(theme::ACCENT_YELLOW).size(14.0).strong())
-                            .fill(Color32::from_rgba_premultiplied(50, 38, 10, 200))
-                            .stroke(Stroke::new(1.0, theme::ACCENT_YELLOW))
-                            .min_size(egui::vec2(btn_w, 44.0))
-                            .corner_radius(CornerRadius::same(22)),
-                    )
-                    .clicked()
-                {
+                let pause_resp = ui.add(
+                    egui::Button::new(RichText::new("Pause").color(theme::ACCENT_YELLOW).size(14.0).strong())
+                        .fill(Color32::from_rgba_premultiplied(50, 38, 10, 200))
+                        .stroke(Stroke::new(1.0, theme::ACCENT_YELLOW))
+                        .min_size(egui::vec2(btn_w, 44.0))
+                        .corner_radius(CornerRadius::same(22)),
+                );
+                theme::paint_button_top_glint(ui, pause_resp.rect);
+                if pause_resp.clicked() {
                     bot.pause();
                     *status_message = "Bot paused".to_string();
                 }
@@ -232,16 +219,15 @@ fn draw_status_controls_card(
                 ui.add_space(8.0);
 
                 // Stop
-                if ui
-                    .add(
-                        egui::Button::new(RichText::new("Stop").color(theme::ACCENT_RED).size(14.0).strong())
-                            .fill(Color32::from_rgba_premultiplied(50, 12, 12, 200))
-                            .stroke(Stroke::new(1.0, theme::ACCENT_RED))
-                            .min_size(egui::vec2(btn_w, 44.0))
-                            .corner_radius(CornerRadius::same(22)),
-                    )
-                    .clicked()
-                {
+                let stop_resp = ui.add(
+                    egui::Button::new(RichText::new("Stop").color(theme::ACCENT_RED).size(14.0).strong())
+                        .fill(Color32::from_rgba_premultiplied(50, 12, 12, 200))
+                        .stroke(Stroke::new(1.0, theme::ACCENT_RED))
+                        .min_size(egui::vec2(btn_w, 44.0))
+                        .corner_radius(CornerRadius::same(22)),
+                );
+                theme::paint_button_top_glint(ui, stop_resp.rect);
+                if stop_resp.clicked() {
                     bot.stop();
                     *status_message = "Bot stopped".to_string();
                 }
@@ -268,13 +254,6 @@ fn draw_status_controls_card(
                 }
             }
         });
-
-    let rect = resp.response.rect;
-    let spec = egui::Rect::from_min_size(
-        rect.min + egui::vec2(20.0, 1.5),
-        egui::vec2((rect.width() - 40.0).max(0.0), 1.5),
-    );
-    ui.painter().rect_filled(spec, CornerRadius::same(1), theme::GLASS_SPECULAR);
 }
 
 // ── HP bar ────────────────────────────────────────────────────────────────────

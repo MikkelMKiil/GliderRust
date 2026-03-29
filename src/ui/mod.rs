@@ -2,13 +2,11 @@ mod panels;
 pub mod theme;
 
 use std::path::PathBuf;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use eframe::egui::{self, CornerRadius, Frame, Margin, RichText, Stroke, Ui};
 
-use crate::bot::BotRuntime;
-use crate::config::AppConfig;
-use crate::memory::{MemoryReader, MemorySnapshot};
+use crate::service::AppService;
 
 pub use panels::debug::DiagnosticsVerbosity;
 
@@ -49,40 +47,22 @@ impl ActiveTab {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 pub struct GliderApp {
-    config: AppConfig,
-    bot: BotRuntime,
-    memory_reader: MemoryReader,
-    snapshot: Option<MemorySnapshot>,
+    service: AppService,
     active_tab: ActiveTab,
     pid_input: String,
     profile_path_input: String,
     last_profile_dir: Option<PathBuf>,
-    status_message: String,
-    last_cycle_at: Option<Instant>,
-    cycle_window_started: Instant,
-    cycles_last_minute: u64,
-    total_cycles: u64,
-    last_cycle_ms: u64,
     diagnostics_verbosity: DiagnosticsVerbosity,
 }
 
 impl Default for GliderApp {
     fn default() -> Self {
         Self {
-            config: AppConfig::default(),
-            bot: BotRuntime::default(),
-            memory_reader: MemoryReader::default(),
-            snapshot: None,
+            service: AppService::default(),
             active_tab: ActiveTab::Home,
             pid_input: String::new(),
             profile_path_input: String::new(),
             last_profile_dir: None,
-            status_message: String::new(),
-            last_cycle_at: None,
-            cycle_window_started: Instant::now(),
-            cycles_last_minute: 0,
-            total_cycles: 0,
-            last_cycle_ms: 0,
             diagnostics_verbosity: DiagnosticsVerbosity::ErrorsAndWarnings,
         }
     }
@@ -94,7 +74,7 @@ impl GliderApp {
         let mut app = Self::default();
         if let Some(rs) = cc.wgpu_render_state.as_ref() {
             let info = rs.adapter.get_info();
-            app.status_message =
+            app.service.status_message =
                 format!("Renderer: wgpu {:?} ({})", info.backend, info.name);
         }
         app
@@ -110,11 +90,13 @@ impl eframe::App for GliderApp {
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         self.run_scheduled_cycle();
 
+        let service_cycle = self.service.cycle_stats();
+
         let cycle_stats = CycleStats {
-            interval_ms: self.config.memory_poll_ms,
-            cycles_last_minute: self.cycles_last_minute,
-            total_cycles: self.total_cycles,
-            last_cycle_ms: self.last_cycle_ms,
+            interval_ms: service_cycle.interval_ms,
+            cycles_last_minute: service_cycle.cycles_last_minute,
+            total_cycles: service_cycle.total_cycles,
+            last_cycle_ms: service_cycle.last_cycle_ms,
         };
 
         let ctx = ui.ctx().clone();
@@ -146,37 +128,37 @@ impl eframe::App for GliderApp {
                     .show(ui, |ui| match self.active_tab {
                         ActiveTab::Home => panels::home::draw(
                             ui,
-                            self.snapshot.as_ref(),
-                            &mut self.bot,
+                            self.service.snapshot.as_ref(),
+                            &mut self.service.bot,
                             &cycle_stats,
-                            &mut self.status_message,
+                            &mut self.service.status_message,
                         ),
                         ActiveTab::Profiles => panels::profiles::draw(
                             ui,
-                            &mut self.bot,
+                            &mut self.service.bot,
                             &mut self.profile_path_input,
                             &mut self.last_profile_dir,
-                            &mut self.status_message,
+                            &mut self.service.status_message,
                         ),
                         ActiveTab::Settings => panels::settings::draw(
                             ui,
-                            &mut self.config,
-                            &mut self.memory_reader,
+                            &mut self.service.config,
+                            &mut self.service.memory_reader,
                             &mut self.pid_input,
-                            &mut self.status_message,
+                            &mut self.service.status_message,
                         ),
                         ActiveTab::Debug => panels::debug::draw(
                             ui,
-                            self.snapshot.as_ref(),
-                            &self.bot,
-                            &self.status_message,
+                            self.service.snapshot.as_ref(),
+                            &self.service.bot,
+                            &self.service.status_message,
                             &mut self.diagnostics_verbosity,
                         ),
                     });
             });
 
-        let repaint_ms = if self.bot.state() == crate::bot::BotState::Running {
-            self.config.memory_poll_ms.max(16)
+        let repaint_ms = if self.service.bot.state() == crate::bot::BotState::Running {
+            self.service.config.memory_poll_ms.max(16)
         } else {
             250
         };
@@ -196,7 +178,7 @@ impl GliderApp {
             );
 
             // Attachment dot
-            let (dot, col) = if self.memory_reader.is_attached() {
+            let (dot, col) = if self.service.memory_reader.is_attached() {
                 ("●", theme::ACCENT_GREEN)
             } else {
                 ("○", theme::TEXT_DIM)
@@ -230,7 +212,7 @@ impl GliderApp {
 
             // ── Right side: hands-off badge + bot state ───────────────
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let (label, col) = match self.bot.state() {
+                let (label, col) = match self.service.bot.state() {
                     crate::bot::BotState::Running => ("● Running", theme::ACCENT_GREEN),
                     crate::bot::BotState::Paused => ("◐ Paused", theme::ACCENT_YELLOW),
                     crate::bot::BotState::Stopped => ("○ Stopped", theme::TEXT_DIM),
@@ -242,40 +224,6 @@ impl GliderApp {
     }
 
     fn run_scheduled_cycle(&mut self) {
-        if self.bot.state() != crate::bot::BotState::Running {
-            return;
-        }
-
-        let now = Instant::now();
-        let interval = Duration::from_millis(self.config.memory_poll_ms);
-        let due = self
-            .last_cycle_at
-            .map(|t| now.duration_since(t) >= interval)
-            .unwrap_or(true);
-
-        if !due {
-            return;
-        }
-
-        if now.duration_since(self.cycle_window_started) >= Duration::from_secs(60) {
-            self.cycle_window_started = now;
-            self.cycles_last_minute = 0;
-        }
-
-        let started = Instant::now();
-
-        match self.memory_reader.read_snapshot() {
-            Ok(snap) => self.snapshot = Some(snap),
-            Err(err) => {
-                self.snapshot = None;
-                self.status_message = format!("Snapshot read failed: {err}");
-            }
-        }
-
-        self.bot.tick(self.snapshot.as_ref());
-        self.last_cycle_at = Some(now);
-        self.cycles_last_minute += 1;
-        self.total_cycles += 1;
-        self.last_cycle_ms = started.elapsed().as_millis() as u64;
+        self.service.run_scheduled_cycle();
     }
 }

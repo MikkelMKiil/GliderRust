@@ -1,10 +1,12 @@
 pub mod bot;
+pub mod backend_api;
 pub mod config;
 pub mod input;
 pub mod memory;
 pub mod net;
 pub mod offsets;
 pub mod profile;
+pub mod service;
 pub mod ui;
 
 pub fn init_logging() {
