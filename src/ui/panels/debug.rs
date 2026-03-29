@@ -37,7 +37,11 @@ pub fn draw(
 ) {
     // ── Nav / Bot internals ───────────────────────────────────────────────────
     theme::glass_frame_raised().show(ui, |ui| {
-        ui.label(RichText::new("BOT INTERNALS").color(theme::TEXT_DIM).size(10.0));
+        ui.label(
+            RichText::new("BOT INTERNALS")
+                .color(theme::TEXT_DIM)
+                .size(10.0),
+        );
         ui.add_space(4.0);
 
         ui.label(
@@ -122,7 +126,11 @@ pub fn draw(
     // ── Diagnostics log ───────────────────────────────────────────────────────
     theme::glass_frame().show(ui, |ui| {
         ui.horizontal(|ui| {
-            ui.label(RichText::new("DIAGNOSTICS").color(theme::TEXT_DIM).size(10.0));
+            ui.label(
+                RichText::new("DIAGNOSTICS")
+                    .color(theme::TEXT_DIM)
+                    .size(10.0),
+            );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 egui::ComboBox::from_id_salt("diag_verbosity")
                     .selected_text(
@@ -162,7 +170,11 @@ pub fn draw(
         }
 
         if lines.is_empty() {
-            ui.label(RichText::new("No diagnostics available").color(theme::TEXT_DIM).size(12.0));
+            ui.label(
+                RichText::new("No diagnostics available")
+                    .color(theme::TEXT_DIM)
+                    .size(12.0),
+            );
             return;
         }
 
@@ -182,10 +194,7 @@ pub fn draw(
                             .color(theme::TEXT_SECONDARY)
                             .size(12.0),
                     )
-                    .default_open(matches!(
-                        category,
-                        "Traversal" | "Health" | "Model Chain"
-                    ))
+                    .default_open(matches!(category, "Traversal" | "Health" | "Model Chain"))
                     .show(ui, |ui| {
                         for line in items {
                             ui.label(
@@ -206,10 +215,7 @@ fn category_for(line: &str) -> &'static str {
     if lower.contains("display") || lower.contains("model") || lower.contains("monster_def") {
         return "Model Chain";
     }
-    if lower.contains("traversal")
-        || lower.contains("first object")
-        || lower.contains("guid")
-    {
+    if lower.contains("traversal") || lower.contains("first object") || lower.contains("guid") {
         return "Traversal";
     }
     if lower.contains("health") || lower.contains("hp") {
@@ -218,10 +224,7 @@ fn category_for(line: &str) -> &'static str {
     if lower.contains("target") {
         return "Target";
     }
-    if lower.contains("attach")
-        || lower.contains("pid")
-        || lower.contains("process")
-    {
+    if lower.contains("attach") || lower.contains("pid") || lower.contains("process") {
         return "Process";
     }
     "General"

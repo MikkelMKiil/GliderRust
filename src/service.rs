@@ -89,9 +89,15 @@ impl AppService {
         }
     }
 
-    pub fn start_bot(&mut self) {
+    pub fn start_bot(&mut self) -> Result<(), String> {
+        if !self.memory_reader.is_attached() {
+            self.status_message = "Cannot start bot: attach to a process first".to_string();
+            return Err(self.status_message.clone());
+        }
+
         self.bot.start();
         self.status_message = "Bot started".to_string();
+        Ok(())
     }
 
     pub fn pause_bot(&mut self) {
@@ -126,13 +132,18 @@ impl AppService {
     }
 
     pub fn attach_pid(&mut self, pid: u32) -> Result<(), String> {
-        self.memory_reader.attach(pid).map_err(|err| err.to_string())?;
+        self.memory_reader
+            .attach(pid)
+            .map_err(|err| err.to_string())?;
         self.status_message = format!("Attached to PID {pid}");
         Ok(())
     }
 
     pub fn attach_wow(&mut self) -> Result<u32, String> {
-        let pid = self.memory_reader.attach_wow().map_err(|err| err.to_string())?;
+        let pid = self
+            .memory_reader
+            .attach_wow()
+            .map_err(|err| err.to_string())?;
         self.status_message = format!("Auto-attached to WoW PID {pid}");
         Ok(pid)
     }
@@ -148,6 +159,18 @@ impl AppService {
 
     pub fn set_telemetry_enabled(&mut self, enabled: bool) {
         self.config.telemetry_enabled = enabled;
+    }
+
+    pub fn set_keybind(&mut self, action: &str, key: &str) -> Result<(), String> {
+        self.config.keybinds.set_binding(action, key)?;
+        self.status_message = format!("Updated keybind '{action}' -> {key}");
+        Ok(())
+    }
+
+    pub fn set_rotation_slot(&mut self, slot: u8, key: &str) -> Result<(), String> {
+        self.config.keybinds.set_rotation_slot(slot, key)?;
+        self.status_message = format!("Updated rotation slot {slot} -> {key}");
+        Ok(())
     }
 
     pub fn run_cycle_now(&mut self) {
@@ -212,14 +235,33 @@ mod tests {
     #[test]
     fn bot_control_methods_update_state() {
         let mut service = AppService::default();
+        let pid = std::process::id();
 
-        service.start_bot();
+        service
+            .attach_pid(pid)
+            .expect("attach should work for current process");
+
+        service
+            .start_bot()
+            .expect("start should work when attached");
         assert_eq!(service.bot.state(), BotState::Running);
 
         service.pause_bot();
         assert_eq!(service.bot.state(), BotState::Paused);
 
         service.stop_bot();
+        assert_eq!(service.bot.state(), BotState::Stopped);
+    }
+
+    #[test]
+    fn start_requires_attached_memory() {
+        let mut service = AppService::default();
+
+        let error = service
+            .start_bot()
+            .expect_err("start should fail when not attached");
+
+        assert_eq!(error, "Cannot start bot: attach to a process first");
         assert_eq!(service.bot.state(), BotState::Stopped);
     }
 }

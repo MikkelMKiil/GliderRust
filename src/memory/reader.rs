@@ -89,8 +89,9 @@ impl MemoryReader {
 
         self.detach();
 
-        let handle = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid) }
-            .map_err(|_| MemoryReaderError::OpenProcessFailed(pid))?;
+        let handle =
+            unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid) }
+                .map_err(|_| MemoryReaderError::OpenProcessFailed(pid))?;
 
         self.process_handle = Some(handle);
         self.attached_pid = Some(pid);
@@ -115,9 +116,7 @@ impl MemoryReader {
     }
 
     pub fn read_snapshot(&self) -> Result<MemorySnapshot, MemoryReaderError> {
-        let handle = self
-            .process_handle
-            .ok_or(MemoryReaderError::NotAttached)?;
+        let handle = self.process_handle.ok_or(MemoryReaderError::NotAttached)?;
 
         if self.attached_pid.is_none() {
             return Err(MemoryReaderError::NotAttached);
@@ -127,19 +126,26 @@ impl MemoryReader {
 
         let client_connection = read_u32(handle, WOTLK_3_3_5A.client_connection_addr)
             .map(|addr| addr as usize)
-            .map_err(|_| MemoryReaderError::ReadMemoryFailed(WOTLK_3_3_5A.client_connection_addr))?;
+            .map_err(|_| {
+                MemoryReaderError::ReadMemoryFailed(WOTLK_3_3_5A.client_connection_addr)
+            })?;
         diagnostics.push(format!("trace client_connection=0x{client_connection:08X}"));
         if client_connection == 0 {
-            return Err(MemoryReaderError::ReadMemoryFailed(WOTLK_3_3_5A.client_connection_addr));
+            return Err(MemoryReaderError::ReadMemoryFailed(
+                WOTLK_3_3_5A.client_connection_addr,
+            ));
         }
 
-        let object_manager = read_u32(handle, client_connection + WOTLK_3_3_5A.object_manager_offset)
-            .map(|addr| addr as usize)
-            .map_err(|_| {
-                MemoryReaderError::ReadMemoryFailed(
-                    client_connection + WOTLK_3_3_5A.object_manager_offset,
-                )
-            })?;
+        let object_manager = read_u32(
+            handle,
+            client_connection + WOTLK_3_3_5A.object_manager_offset,
+        )
+        .map(|addr| addr as usize)
+        .map_err(|_| {
+            MemoryReaderError::ReadMemoryFailed(
+                client_connection + WOTLK_3_3_5A.object_manager_offset,
+            )
+        })?;
         diagnostics.push(format!("trace object_manager=0x{object_manager:08X}"));
         if object_manager == 0 {
             return Err(MemoryReaderError::ReadMemoryFailed(
@@ -151,7 +157,9 @@ impl MemoryReader {
             .map_err(|_| MemoryReaderError::ReadMemoryFailed(WOTLK_3_3_5A.player_id_addr))?;
         diagnostics.push(format!("trace local_guid=0x{local_guid:016X}"));
         if local_guid == 0 {
-            return Err(MemoryReaderError::ReadMemoryFailed(WOTLK_3_3_5A.player_id_addr));
+            return Err(MemoryReaderError::ReadMemoryFailed(
+                WOTLK_3_3_5A.player_id_addr,
+            ));
         }
 
         let manager_local_guid = read_u64(handle, object_manager + WOTLK_3_3_5A.local_guid_offset)
@@ -190,13 +198,11 @@ impl MemoryReader {
             })
             .ok();
 
-        let player_monster_definition_ptr = read_u32(
-            handle,
-            player_base + WOTLK_3_3_5A.monster_definition_offset,
-        )
-        .map(|value| value as usize)
-        .ok()
-        .filter(|value| *value != 0);
+        let player_monster_definition_ptr =
+            read_u32(handle, player_base + WOTLK_3_3_5A.monster_definition_offset)
+                .map(|value| value as usize)
+                .ok()
+                .filter(|value| *value != 0);
 
         let x = read_f32(handle, player_base + WOTLK_3_3_5A.player_xyz_offset)
             .map_err(|_| {
@@ -297,13 +303,27 @@ impl MemoryReader {
             &mut diagnostics,
         );
 
-        let player_bytes0 = read_u32(handle, player_storage + WOTLK_3_3_5A.unit_field_bytes0_offset).ok();
+        let player_bytes0 = read_u32(
+            handle,
+            player_storage + WOTLK_3_3_5A.unit_field_bytes0_offset,
+        )
+        .ok();
         let player_race = player_bytes0.map(|bytes| (bytes & 0xFF) as u8);
-        let player_level = read_u32(handle, player_storage + WOTLK_3_3_5A.unit_field_level_offset).ok();
-        let player_faction =
-            read_u32(handle, player_storage + WOTLK_3_3_5A.unit_field_faction_template_offset).ok();
-        let player_unit_flags =
-            read_u32(handle, player_storage + WOTLK_3_3_5A.unit_field_flags_offset).ok();
+        let player_level = read_u32(
+            handle,
+            player_storage + WOTLK_3_3_5A.unit_field_level_offset,
+        )
+        .ok();
+        let player_faction = read_u32(
+            handle,
+            player_storage + WOTLK_3_3_5A.unit_field_faction_template_offset,
+        )
+        .ok();
+        let player_unit_flags = read_u32(
+            handle,
+            player_storage + WOTLK_3_3_5A.unit_field_flags_offset,
+        )
+        .ok();
         let (player_display_id, player_native_display_id) = read_display_pair_strict(
             handle,
             player_storage,
@@ -321,17 +341,12 @@ impl MemoryReader {
             .filter(|guid| *guid != 0);
 
         let target_base = target_guid.and_then(|guid| {
-            find_object_by_guid(
-                handle,
-                object_manager,
-                guid,
-                "target",
-                &mut diagnostics,
-            )
+            find_object_by_guid(handle, object_manager, guid, "target", &mut diagnostics)
         });
 
         if target_guid.is_some() && target_base.is_none() {
-            diagnostics.push("target selected but target object was not found in object list".to_string());
+            diagnostics
+                .push("target selected but target object was not found in object list".to_string());
         }
 
         let target_storage = target_base.and_then(|base| {
@@ -358,16 +373,23 @@ impl MemoryReader {
             (None, None)
         };
 
-        let target_bytes0 = target_storage
-            .and_then(|storage| read_u32(handle, storage + WOTLK_3_3_5A.unit_field_bytes0_offset).ok());
-        let target_race = target_bytes0.map(|bytes| (bytes & 0xFF) as u8);
-        let target_level = target_storage
-            .and_then(|storage| read_u32(handle, storage + WOTLK_3_3_5A.unit_field_level_offset).ok());
-        let target_faction = target_storage.and_then(|storage| {
-            read_u32(handle, storage + WOTLK_3_3_5A.unit_field_faction_template_offset).ok()
+        let target_bytes0 = target_storage.and_then(|storage| {
+            read_u32(handle, storage + WOTLK_3_3_5A.unit_field_bytes0_offset).ok()
         });
-        let target_unit_flags =
-            target_storage.and_then(|storage| read_u32(handle, storage + WOTLK_3_3_5A.unit_field_flags_offset).ok());
+        let target_race = target_bytes0.map(|bytes| (bytes & 0xFF) as u8);
+        let target_level = target_storage.and_then(|storage| {
+            read_u32(handle, storage + WOTLK_3_3_5A.unit_field_level_offset).ok()
+        });
+        let target_faction = target_storage.and_then(|storage| {
+            read_u32(
+                handle,
+                storage + WOTLK_3_3_5A.unit_field_faction_template_offset,
+            )
+            .ok()
+        });
+        let target_unit_flags = target_storage.and_then(|storage| {
+            read_u32(handle, storage + WOTLK_3_3_5A.unit_field_flags_offset).ok()
+        });
         let target_monster_definition_ptr = target_base
             .and_then(|base| read_u32(handle, base + WOTLK_3_3_5A.monster_definition_offset).ok())
             .map(|value| value as usize)
@@ -561,7 +583,9 @@ fn read_health_pair_strict(
 
     let max = read_u32(handle, max_address)
         .map_err(|_| {
-            diagnostics.push(format!("{label} max health read failed at 0x{max_address:08X}"));
+            diagnostics.push(format!(
+                "{label} max health read failed at 0x{max_address:08X}"
+            ));
         })
         .ok();
 
@@ -643,7 +667,9 @@ fn lookup_player_name_by_guid(
     let name_base = match read_u32(handle, store + 0x1C) {
         Ok(v) if v > 0x1000 => v as usize,
         _ => {
-            diagnostics.push(format!("name lookup: nameBase invalid at store=0x{store:08X}"));
+            diagnostics.push(format!(
+                "name lookup: nameBase invalid at store=0x{store:08X}"
+            ));
             return None;
         }
     };
@@ -668,13 +694,16 @@ fn lookup_player_name_by_guid(
 
         let mut chain_steps = 0usize;
         while node > 0x1000 && chain_steps < 256 {
-            let node_guid = match read_u64(handle, node + WOTLK_3_3_5A.player_names_guid_offset_primary) {
-                Ok(v) => v,
-                Err(_) => break,
-            };
+            let node_guid =
+                match read_u64(handle, node + WOTLK_3_3_5A.player_names_guid_offset_primary) {
+                    Ok(v) => v,
+                    Err(_) => break,
+                };
 
             if node_guid == guid {
-                if let Ok(name) = read_c_string(handle, node + WOTLK_3_3_5A.player_names_name_offset, 48) {
+                if let Ok(name) =
+                    read_c_string(handle, node + WOTLK_3_3_5A.player_names_name_offset, 48)
+                {
                     if !name.is_empty() {
                         diagnostics.push(format!(
                             "trace name_lookup matched bucket={i} guid=0x{guid:016X} name={name}"
@@ -699,7 +728,11 @@ fn lookup_player_name_by_guid(
     None
 }
 
-fn lookup_monster_name(handle: HANDLE, base: usize, diagnostics: &mut Vec<String>) -> Option<String> {
+fn lookup_monster_name(
+    handle: HANDLE,
+    base: usize,
+    diagnostics: &mut Vec<String>,
+) -> Option<String> {
     let monster_def = read_u32(handle, base + WOTLK_3_3_5A.monster_definition_offset)
         .map(|value| value as usize)
         .ok()
@@ -839,7 +872,11 @@ fn read_f32(handle: HANDLE, address: usize) -> Result<f32, MemoryReaderError> {
     read_value::<f32>(handle, address)
 }
 
-fn read_c_string(handle: HANDLE, address: usize, max_len: usize) -> Result<String, MemoryReaderError> {
+fn read_c_string(
+    handle: HANDLE,
+    address: usize,
+    max_len: usize,
+) -> Result<String, MemoryReaderError> {
     let bytes = read_bytes(handle, address, max_len)?;
     let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
     Ok(String::from_utf8_lossy(&bytes[..end]).trim().to_string())

@@ -15,17 +15,19 @@ pub fn draw(
 ) {
     // ── Bot controls ──────────────────────────────────────────────────────────
     theme::glass_frame_raised().show(ui, |ui| {
-        ui.label(RichText::new("BOT CONTROLS").color(theme::TEXT_DIM).size(10.0));
+        ui.label(
+            RichText::new("BOT CONTROLS")
+                .color(theme::TEXT_DIM)
+                .size(10.0),
+        );
         ui.add_space(6.0);
 
         ui.horizontal(|ui| {
             if ui
                 .add(
-                    egui::Button::new(
-                        RichText::new("  Start  ").color(theme::ACCENT_GREEN),
-                    )
-                    .fill(egui::Color32::from_rgb(14, 38, 26))
-                    .stroke(egui::Stroke::new(1.0, theme::ACCENT_GREEN)),
+                    egui::Button::new(RichText::new("  Start  ").color(theme::ACCENT_GREEN))
+                        .fill(egui::Color32::from_rgb(14, 38, 26))
+                        .stroke(egui::Stroke::new(1.0, theme::ACCENT_GREEN)),
                 )
                 .clicked()
             {
@@ -35,11 +37,9 @@ pub fn draw(
 
             if ui
                 .add(
-                    egui::Button::new(
-                        RichText::new("  Pause  ").color(theme::ACCENT_YELLOW),
-                    )
-                    .fill(egui::Color32::from_rgb(38, 30, 10))
-                    .stroke(egui::Stroke::new(1.0, theme::ACCENT_YELLOW)),
+                    egui::Button::new(RichText::new("  Pause  ").color(theme::ACCENT_YELLOW))
+                        .fill(egui::Color32::from_rgb(38, 30, 10))
+                        .stroke(egui::Stroke::new(1.0, theme::ACCENT_YELLOW)),
                 )
                 .clicked()
             {
@@ -49,11 +49,9 @@ pub fn draw(
 
             if ui
                 .add(
-                    egui::Button::new(
-                        RichText::new("  Stop  ").color(theme::ACCENT_RED),
-                    )
-                    .fill(egui::Color32::from_rgb(38, 12, 12))
-                    .stroke(egui::Stroke::new(1.0, theme::ACCENT_RED)),
+                    egui::Button::new(RichText::new("  Stop  ").color(theme::ACCENT_RED))
+                        .fill(egui::Color32::from_rgb(38, 12, 12))
+                        .stroke(egui::Stroke::new(1.0, theme::ACCENT_RED)),
                 )
                 .clicked()
             {
@@ -87,11 +85,20 @@ pub fn draw(
 
     // ── Active profile ────────────────────────────────────────────────────────
     theme::glass_frame().show(ui, |ui| {
-        ui.label(RichText::new("ACTIVE PROFILE").color(theme::TEXT_DIM).size(10.0));
+        ui.label(
+            RichText::new("ACTIVE PROFILE")
+                .color(theme::TEXT_DIM)
+                .size(10.0),
+        );
         ui.add_space(4.0);
 
         let name = bot.active_profile_name().unwrap_or("None loaded");
-        ui.label(RichText::new(name).color(theme::TEXT_PRIMARY).size(16.0).strong());
+        ui.label(
+            RichText::new(name)
+                .color(theme::TEXT_PRIMARY)
+                .size(16.0)
+                .strong(),
+        );
 
         ui.add_space(8.0);
 
@@ -109,8 +116,7 @@ pub fn draw(
 
         ui.horizontal(|ui| {
             if ui.button("Browse…").clicked() {
-                let mut dialog =
-                    rfd::FileDialog::new().add_filter("Profile XML", &["xml"]);
+                let mut dialog = rfd::FileDialog::new().add_filter("Profile XML", &["xml"]);
                 if let Some(dir) = last_profile_dir.as_ref() {
                     dialog = dialog.set_directory(dir);
                 }
@@ -129,8 +135,7 @@ pub fn draw(
                         Ok(profile) => {
                             let wp_count = profile.waypoints.len();
                             bot.set_profile(profile);
-                            *status_message =
-                                format!("Loaded profile with {wp_count} waypoints");
+                            *status_message = format!("Loaded profile with {wp_count} waypoints");
                         }
                         Err(err) => {
                             *status_message = format!("Profile load failed: {err}");
@@ -149,7 +154,11 @@ pub fn draw(
     if !status_message.is_empty() {
         ui.add_space(8.0);
         theme::glass_frame_inset().show(ui, |ui| {
-            ui.label(RichText::new(status_message.as_str()).color(theme::TEXT_SECONDARY).size(12.0));
+            ui.label(
+                RichText::new(status_message.as_str())
+                    .color(theme::TEXT_SECONDARY)
+                    .size(12.0),
+            );
         });
     }
 }

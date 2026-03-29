@@ -125,6 +125,32 @@ h2 {
   gap: 8px;
 }
 
+.keybindGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rotationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.keybindField {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.keybindField input {
+  min-width: 0;
+  width: 100%;
+}
+
 input[type="text"],
 input[type="number"] {
   min-width: 240px;

@@ -1,4 +1,4 @@
-export const LEGACY_CONTROLS = [
+const LEGACY_CONTROLS = [
     {
         "form":  "ConfigForm.cs",
         "control":  "AccountCreate",
@@ -526,4 +526,8 @@ export const LEGACY_CONTROLS = [
     }
 ]
 ;
+
+if (typeof window !== "undefined") {
+    window.LEGACY_CONTROLS = LEGACY_CONTROLS;
+}
 

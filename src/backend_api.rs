@@ -37,7 +37,7 @@ pub fn get_state_snapshot(state: &SharedAppService) -> Result<AppStateSnapshot, 
 
 pub fn bot_start(state: &SharedAppService) -> Result<AppStateSnapshot, String> {
     with_service_mut(state, |service| {
-        service.start_bot();
+        service.start_bot()?;
         Ok(service.state_snapshot())
     })
 }
@@ -70,10 +70,7 @@ pub fn profile_clear(state: &SharedAppService) -> Result<AppStateSnapshot, Strin
     })
 }
 
-pub fn memory_attach_pid(
-    state: &SharedAppService,
-    pid: u32,
-) -> Result<AppStateSnapshot, String> {
+pub fn memory_attach_pid(state: &SharedAppService, pid: u32) -> Result<AppStateSnapshot, String> {
     with_service_mut(state, |service| {
         service.attach_pid(pid)?;
         Ok(service.state_snapshot())
@@ -117,6 +114,28 @@ pub fn settings_set_telemetry(
     })
 }
 
+pub fn settings_set_keybind(
+    state: &SharedAppService,
+    action: &str,
+    key: &str,
+) -> Result<AppStateSnapshot, String> {
+    with_service_mut(state, |service| {
+        service.set_keybind(action, key)?;
+        Ok(service.state_snapshot())
+    })
+}
+
+pub fn settings_set_rotation_slot(
+    state: &SharedAppService,
+    slot: u8,
+    key: &str,
+) -> Result<AppStateSnapshot, String> {
+    with_service_mut(state, |service| {
+        service.set_rotation_slot(slot, key)?;
+        Ok(service.state_snapshot())
+    })
+}
+
 pub fn run_cycle_now(state: &SharedAppService) -> Result<AppStateSnapshot, String> {
     with_service_mut(state, |service| {
         service.run_cycle_now();
@@ -133,12 +152,18 @@ pub fn run_scheduled_cycle(state: &SharedAppService) -> Result<AppStateSnapshot,
 
 #[cfg(test)]
 mod tests {
-    use super::{bot_pause, bot_start, bot_stop, new_state};
+    use super::{
+        bot_pause, bot_start, bot_stop, memory_attach_pid, new_state, settings_set_keybind,
+        settings_set_rotation_slot,
+    };
     use crate::bot::BotState;
 
     #[test]
     fn command_style_bot_controls_work() {
         let state = new_state();
+        let pid = std::process::id();
+
+        memory_attach_pid(&state, pid).expect("attach should work for current process");
 
         let running = bot_start(&state).expect("start should work");
         assert_eq!(running.bot_state, BotState::Running);
@@ -148,5 +173,26 @@ mod tests {
 
         let stopped = bot_stop(&state).expect("stop should work");
         assert_eq!(stopped.bot_state, BotState::Stopped);
+    }
+
+    #[test]
+    fn command_start_requires_attachment() {
+        let state = new_state();
+
+        let error = bot_start(&state).expect_err("start should fail when detached");
+        assert_eq!(error, "Cannot start bot: attach to a process first");
+    }
+
+    #[test]
+    fn keybind_commands_update_config() {
+        let state = new_state();
+
+        let after_action = settings_set_keybind(&state, "interact", "g")
+            .expect("keybind action update should work");
+        assert_eq!(after_action.config.keybinds.interact, "G");
+
+        let after_rotation =
+            settings_set_rotation_slot(&state, 3, "r").expect("rotation update should work");
+        assert_eq!(after_rotation.config.keybinds.rotation_slots[2], "R");
     }
 }

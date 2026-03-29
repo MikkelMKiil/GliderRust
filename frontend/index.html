@@ -47,11 +47,6 @@
           <div><dt>Poll</dt><dd id="pollText">-</dd></div>
         </dl>
       </article>
-
-      <article class="card">
-        <h2>Snapshot</h2>
-        <pre id="snapshotPreview">No snapshot yet</pre>
-      </article>
     </section>
 
     <section class="panel" id="panel-profiles">
@@ -89,6 +84,39 @@
             Telemetry Enabled
           </label>
           <button id="setTelemetryBtn" class="btn">Apply</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Keybind Setup (WotLK 3.3.5a)</h2>
+        <div class="keybindGrid">
+          <label class="keybindField">Move Forward<input id="bindMoveForward" type="text" maxlength="24"></label>
+          <label class="keybindField">Move Backward<input id="bindMoveBackward" type="text" maxlength="24"></label>
+          <label class="keybindField">Strafe Left<input id="bindStrafeLeft" type="text" maxlength="24"></label>
+          <label class="keybindField">Strafe Right<input id="bindStrafeRight" type="text" maxlength="24"></label>
+          <label class="keybindField">Ascend<input id="bindAscend" type="text" maxlength="24"></label>
+          <label class="keybindField">Descend<input id="bindDescend" type="text" maxlength="24"></label>
+          <label class="keybindField">Turn Left<input id="bindTurnLeft" type="text" maxlength="24"></label>
+          <label class="keybindField">Turn Right<input id="bindTurnRight" type="text" maxlength="24"></label>
+          <label class="keybindField">Interact<input id="bindInteract" type="text" maxlength="24"></label>
+          <label class="keybindField">Assist/Target<input id="bindAssistTarget" type="text" maxlength="24"></label>
+        </div>
+        <div class="row gap">
+          <button id="applyKeybindsBtn" class="btn">Apply Keybinds</button>
+        </div>
+        <div class="rotationGrid">
+          <label class="keybindField">1<input id="rotSlot1" type="text" maxlength="24"></label>
+          <label class="keybindField">2<input id="rotSlot2" type="text" maxlength="24"></label>
+          <label class="keybindField">3<input id="rotSlot3" type="text" maxlength="24"></label>
+          <label class="keybindField">4<input id="rotSlot4" type="text" maxlength="24"></label>
+          <label class="keybindField">5<input id="rotSlot5" type="text" maxlength="24"></label>
+          <label class="keybindField">6<input id="rotSlot6" type="text" maxlength="24"></label>
+          <label class="keybindField">7<input id="rotSlot7" type="text" maxlength="24"></label>
+          <label class="keybindField">8<input id="rotSlot8" type="text" maxlength="24"></label>
+          <label class="keybindField">9<input id="rotSlot9" type="text" maxlength="24"></label>
+        </div>
+        <div class="row gap">
+          <button id="applyRotationBtn" class="btn">Apply Rotation Slots</button>
         </div>
       </article>
     </section>
@@ -134,6 +162,7 @@
     <footer class="statusBar" id="statusBar">Ready</footer>
   </main>
 
-  <script type="module" src="app.js"></script>
+  <script src="legacy-controls.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

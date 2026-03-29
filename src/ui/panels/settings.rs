@@ -13,18 +13,23 @@ pub fn draw(
 ) {
     // ── Process attach ────────────────────────────────────────────────────────
     theme::glass_frame_raised().show(ui, |ui| {
-        ui.label(RichText::new("WOW PROCESS").color(theme::TEXT_DIM).size(10.0));
+        ui.label(
+            RichText::new("WOW PROCESS")
+                .color(theme::TEXT_DIM)
+                .size(10.0),
+        );
         ui.add_space(6.0);
 
         ui.horizontal(|ui| {
             let attached = reader.is_attached();
             let dot = if attached { "●" } else { "○" };
-            let col = if attached { theme::ACCENT_GREEN } else { theme::TEXT_DIM };
+            let col = if attached {
+                theme::ACCENT_GREEN
+            } else {
+                theme::TEXT_DIM
+            };
             ui.label(RichText::new(dot).color(col));
-            ui.label(
-                RichText::new(if attached { "Attached" } else { "Not attached" })
-                    .color(col),
-            );
+            ui.label(RichText::new(if attached { "Attached" } else { "Not attached" }).color(col));
         });
 
         ui.add_space(6.0);
@@ -54,11 +59,9 @@ pub fn draw(
         ui.horizontal(|ui| {
             if ui
                 .add(
-                    egui::Button::new(
-                        RichText::new("Auto-Attach WoW").color(theme::ACCENT_BLUE),
-                    )
-                    .fill(theme::ACCENT_BLUE_DIM)
-                    .stroke(egui::Stroke::new(1.0, theme::ACCENT_BLUE)),
+                    egui::Button::new(RichText::new("Auto-Attach WoW").color(theme::ACCENT_BLUE))
+                        .fill(theme::ACCENT_BLUE_DIM)
+                        .stroke(egui::Stroke::new(1.0, theme::ACCENT_BLUE)),
                 )
                 .clicked()
             {
@@ -84,7 +87,11 @@ pub fn draw(
 
     // ── Performance ───────────────────────────────────────────────────────────
     theme::glass_frame().show(ui, |ui| {
-        ui.label(RichText::new("PERFORMANCE").color(theme::TEXT_DIM).size(10.0));
+        ui.label(
+            RichText::new("PERFORMANCE")
+                .color(theme::TEXT_DIM)
+                .size(10.0),
+        );
         ui.add_space(6.0);
 
         ui.horizontal(|ui| {

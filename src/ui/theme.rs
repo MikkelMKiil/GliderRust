@@ -42,10 +42,18 @@ pub fn health_color(ratio: f32) -> Color32 {
     let ratio = ratio.clamp(0.0, 1.0);
     if ratio >= 0.5 {
         let t = (ratio - 0.5) * 2.0;
-        lerp_color(Color32::from_rgb(255, 195, 48), Color32::from_rgb(60, 210, 150), t)
+        lerp_color(
+            Color32::from_rgb(255, 195, 48),
+            Color32::from_rgb(60, 210, 150),
+            t,
+        )
     } else {
         let t = ratio * 2.0;
-        lerp_color(Color32::from_rgb(255, 78, 78), Color32::from_rgb(255, 195, 48), t)
+        lerp_color(
+            Color32::from_rgb(255, 78, 78),
+            Color32::from_rgb(255, 195, 48),
+            t,
+        )
     }
 }
 
@@ -88,19 +96,13 @@ pub fn glass_frame_inset() -> Frame {
 
 /// Draw a glass card and then paint a soft top glint to simulate
 /// liquid-glass rim lighting without a hard white line.
-pub fn glass_card<R>(
-    ui: &mut egui::Ui,
-    add_contents: impl FnOnce(&mut egui::Ui) -> R,
-) -> R {
+pub fn glass_card<R>(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui) -> R) -> R {
     let inner = glass_frame().show(ui, add_contents);
     paint_specular(ui, inner.response.rect, 20);
     inner.inner
 }
 
-pub fn glass_card_raised<R>(
-    ui: &mut egui::Ui,
-    add_contents: impl FnOnce(&mut egui::Ui) -> R,
-) -> R {
+pub fn glass_card_raised<R>(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui) -> R) -> R {
     let inner = glass_frame_raised().show(ui, add_contents);
     paint_specular(ui, inner.response.rect, 20);
     inner.inner
@@ -139,7 +141,16 @@ pub fn paint_top_glint(
     let right = center_x + glint_width * 0.5;
     let soft_top = rect.top() + top_offset;
 
-    paint_glint_strip(ui, rect, left, right, soft_top, soft_height, soft_alpha, 0.24);
+    paint_glint_strip(
+        ui,
+        rect,
+        left,
+        right,
+        soft_top,
+        soft_height,
+        soft_alpha,
+        0.24,
+    );
 
     let core_inset = glint_width * 0.16;
     let core_top = soft_top + ((soft_height - core_height) * 0.25).clamp(0.0, 2.0);
@@ -203,7 +214,11 @@ fn paint_glint_strip(
     ];
 
     for (i, pos) in top_row.into_iter().enumerate() {
-        let color = if i == 0 || i == 3 { transparent } else { top_color };
+        let color = if i == 0 || i == 3 {
+            transparent
+        } else {
+            top_color
+        };
         mesh.vertices.push(egui::epaint::Vertex {
             pos,
             uv: egui::pos2(0.0, 0.0),

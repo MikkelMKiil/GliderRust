@@ -121,7 +121,11 @@ impl eframe::App for GliderApp {
 
         // ── 3. Tab content ────────────────────────────────────────────────────
         egui::CentralPanel::default()
-            .frame(Frame::new().fill(egui::Color32::TRANSPARENT).inner_margin(Margin::same(14)))
+            .frame(
+                Frame::new()
+                    .fill(egui::Color32::TRANSPARENT)
+                    .inner_margin(Margin::same(14)),
+            )
             .show_inside(ui, |ui| {
                 egui::ScrollArea::vertical()
                     .auto_shrink(false)
@@ -191,18 +195,24 @@ impl GliderApp {
             for &tab in ActiveTab::ALL {
                 let active = self.active_tab == tab;
                 let (fill, stroke_col, text_col) = if active {
-                    (theme::TAB_ACTIVE_FILL, theme::TAB_ACTIVE_BORDER, theme::ACCENT_BLUE)
+                    (
+                        theme::TAB_ACTIVE_FILL,
+                        theme::TAB_ACTIVE_BORDER,
+                        theme::ACCENT_BLUE,
+                    )
                 } else {
-                    (theme::TAB_INACTIVE_FILL, theme::TAB_INACTIVE_BORDER, theme::TEXT_SECONDARY)
+                    (
+                        theme::TAB_INACTIVE_FILL,
+                        theme::TAB_INACTIVE_BORDER,
+                        theme::TEXT_SECONDARY,
+                    )
                 };
 
-                let btn = egui::Button::new(
-                    RichText::new(tab.label()).color(text_col).size(13.0),
-                )
-                .fill(fill)
-                .stroke(Stroke::new(1.0, stroke_col))
-                .min_size(egui::vec2(90.0, 34.0))
-                .corner_radius(CornerRadius::same(17));
+                let btn = egui::Button::new(RichText::new(tab.label()).color(text_col).size(13.0))
+                    .fill(fill)
+                    .stroke(Stroke::new(1.0, stroke_col))
+                    .min_size(egui::vec2(90.0, 34.0))
+                    .corner_radius(CornerRadius::same(17));
 
                 if ui.add(btn).clicked() {
                     self.active_tab = tab;
@@ -218,7 +228,6 @@ impl GliderApp {
                     crate::bot::BotState::Stopped => ("○ Stopped", theme::TEXT_DIM),
                 };
                 ui.label(RichText::new(label).color(col).size(12.0));
-
             });
         });
     }

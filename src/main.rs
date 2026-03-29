@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use serde::Deserialize;
@@ -7,7 +8,7 @@ use tao::dpi::LogicalSize;
 use tao::event::{Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy};
 use tao::window::WindowBuilder;
-use wry::http::Request;
+use wry::http::{header::CONTENT_TYPE, Request, Response, StatusCode};
 use wry::WebViewBuilder;
 
 use glider_rust::backend_api;
@@ -42,6 +43,8 @@ const TAURI_BRIDGE_SCRIPT: &str = r#"
 })();
 "#;
 
+const FRONTEND_PROTOCOL: &str = "glider";
+
 #[derive(Debug, Clone)]
 enum UserEvent {
     EvalScript(String),
@@ -67,11 +70,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build(&event_loop)?;
 
     let shared_state = backend_api::new_state();
+    let frontend_root = frontend_root_dir();
 
     let proxy = event_loop.create_proxy();
     let ipc_state = shared_state.clone();
 
     let webview = WebViewBuilder::new()
+        .with_custom_protocol(FRONTEND_PROTOCOL.into(), move |_webview_id, request| {
+            serve_frontend_asset(&frontend_root, request)
+        })
         .with_initialization_script(TAURI_BRIDGE_SCRIPT)
         .with_url(frontend_index_url())
         .with_ipc_handler(move |request: Request<String>| {
@@ -108,17 +115,90 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn frontend_index_url() -> String {
-    let index_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("frontend")
-        .join("index.html");
-    let canonical = index_path.canonicalize().unwrap_or(index_path);
-
-    url::Url::from_file_path(&canonical)
-        .expect("frontend/index.html must exist and be a valid file path")
-        .to_string()
+    format!("{FRONTEND_PROTOCOL}://localhost/index.html")
 }
 
-fn handle_ipc_message(raw_message: &str, state: &SharedAppService, proxy: &EventLoopProxy<UserEvent>) {
+fn frontend_root_dir() -> PathBuf {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("frontend");
+    root.canonicalize().unwrap_or(root)
+}
+
+fn serve_frontend_asset(
+    frontend_root: &Path,
+    request: Request<Vec<u8>>,
+) -> Response<Cow<'static, [u8]>> {
+    let response = match read_frontend_asset(frontend_root, request.uri().path()) {
+        Ok((mime, bytes)) => Response::builder()
+            .status(StatusCode::OK)
+            .header(CONTENT_TYPE, mime)
+            .body(bytes)
+            .unwrap_or_else(|err| {
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .header(CONTENT_TYPE, "text/plain; charset=utf-8")
+                    .body(format!("Failed to build asset response: {err}").into_bytes())
+                    .unwrap()
+            }),
+        Err((status, message)) => Response::builder()
+            .status(status)
+            .header(CONTENT_TYPE, "text/plain; charset=utf-8")
+            .body(message.into_bytes())
+            .unwrap(),
+    };
+
+    response.map(Into::into)
+}
+
+fn read_frontend_asset(
+    frontend_root: &Path,
+    request_path: &str,
+) -> Result<(&'static str, Vec<u8>), (StatusCode, String)> {
+    let relative = match request_path {
+        "/" | "" => "index.html",
+        _ => request_path.trim_start_matches('/'),
+    };
+
+    let candidate = frontend_root.join(relative);
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|_| (StatusCode::NOT_FOUND, format!("Asset not found: {relative}")))?;
+
+    if !canonical.starts_with(frontend_root) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Asset path escapes frontend root".to_string(),
+        ));
+    }
+
+    let bytes = std::fs::read(&canonical).map_err(|err| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to read asset {relative}: {err}"),
+        )
+    })?;
+
+    Ok((mime_for_asset(&canonical), bytes))
+}
+
+fn mime_for_asset(path: &Path) -> &'static str {
+    match path.extension().and_then(|ext| ext.to_str()).unwrap_or("") {
+        "html" => "text/html; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "js" => "text/javascript; charset=utf-8",
+        "json" => "application/json; charset=utf-8",
+        "svg" => "image/svg+xml",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "webp" => "image/webp",
+        _ => "application/octet-stream",
+    }
+}
+
+fn handle_ipc_message(
+    raw_message: &str,
+    state: &SharedAppService,
+    proxy: &EventLoopProxy<UserEvent>,
+) {
     let message: IpcInvokeMessage = match serde_json::from_str(raw_message) {
         Ok(message) => message,
         Err(err) => {
@@ -132,7 +212,10 @@ fn handle_ipc_message(raw_message: &str, state: &SharedAppService, proxy: &Event
         Err(err) => {
             let err_json = serde_json::to_string(&err)
                 .unwrap_or_else(|_| "\"Internal command error\"".to_string());
-            format!("window.__gliderResolve({}, false, {});", message.id, err_json)
+            format!(
+                "window.__gliderResolve({}, false, {});",
+                message.id, err_json
+            )
         }
     };
 
@@ -167,6 +250,18 @@ fn dispatch_command(state: &SharedAppService, cmd: &str, args: &Value) -> Result
             let enabled = get_bool_arg(args, &["telemetryEnabled", "telemetry_enabled"])?;
             to_json(backend_api::settings_set_telemetry(state, enabled)?)
         }
+        "settings_set_keybind" => {
+            let action = get_string_arg(args, &["action"])?;
+            let key = get_string_arg(args, &["key"])?;
+            to_json(backend_api::settings_set_keybind(state, &action, &key)?)
+        }
+        "settings_set_rotation_slot" => {
+            let slot_u64 = get_u64_arg(args, &["slot"])?;
+            let slot =
+                u8::try_from(slot_u64).map_err(|_| "slot out of range for u8".to_string())?;
+            let key = get_string_arg(args, &["key"])?;
+            to_json(backend_api::settings_set_rotation_slot(state, slot, &key)?)
+        }
         "run_cycle_now" => to_json(backend_api::run_cycle_now(state)?),
         "run_scheduled_cycle" => to_json(backend_api::run_scheduled_cycle(state)?),
         _ => Err(format!("Unknown command: {cmd}")),
@@ -187,7 +282,9 @@ fn get_string_arg(args: &Value, keys: &[&str]) -> Result<String, String> {
             .as_str()
             .map(str::to_string)
             .ok_or_else(|| format!("Expected string for any of keys: {keys:?}")),
-        None => Err(format!("Missing required argument. Expected any of keys: {keys:?}")),
+        None => Err(format!(
+            "Missing required argument. Expected any of keys: {keys:?}"
+        )),
     }
 }
 
@@ -196,7 +293,9 @@ fn get_u64_arg(args: &Value, keys: &[&str]) -> Result<u64, String> {
         Some(value) => value
             .as_u64()
             .ok_or_else(|| format!("Expected unsigned integer for any of keys: {keys:?}")),
-        None => Err(format!("Missing required argument. Expected any of keys: {keys:?}")),
+        None => Err(format!(
+            "Missing required argument. Expected any of keys: {keys:?}"
+        )),
     }
 }
 
@@ -205,6 +304,8 @@ fn get_bool_arg(args: &Value, keys: &[&str]) -> Result<bool, String> {
         Some(value) => value
             .as_bool()
             .ok_or_else(|| format!("Expected boolean for any of keys: {keys:?}")),
-        None => Err(format!("Missing required argument. Expected any of keys: {keys:?}")),
+        None => Err(format!(
+            "Missing required argument. Expected any of keys: {keys:?}"
+        )),
     }
 }

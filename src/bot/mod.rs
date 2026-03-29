@@ -2,9 +2,9 @@ pub mod state;
 
 use serde::{Deserialize, Serialize};
 
+use crate::input::InputCommand;
 use crate::memory::types::MemorySnapshot;
 use crate::profile::GlideProfile;
-use crate::input::InputCommand;
 
 pub use state::{BotState, RuntimeStatus};
 
@@ -165,7 +165,8 @@ impl BotRuntime {
 
         let waypoint_reached = distance <= WAYPOINT_RADIUS;
         if waypoint_reached {
-            self.current_waypoint_index = (self.current_waypoint_index + 1) % profile.waypoints.len();
+            self.current_waypoint_index =
+                (self.current_waypoint_index + 1) % profile.waypoints.len();
         }
 
         self.nav_output = NavigationOutput {
@@ -215,10 +216,7 @@ mod tests {
             name: Some("Test".to_string()),
             min_level: None,
             max_level: None,
-            waypoints: vec![
-                Waypoint { x: 10.0, y: 10.0 },
-                Waypoint { x: 20.0, y: 20.0 },
-            ],
+            waypoints: vec![Waypoint { x: 10.0, y: 10.0 }, Waypoint { x: 20.0, y: 20.0 }],
         };
 
         let mut runtime = BotRuntime::default();

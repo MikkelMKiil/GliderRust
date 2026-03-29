@@ -1,5 +1,5 @@
-pub mod bot;
 pub mod backend_api;
+pub mod bot;
 pub mod config;
 pub mod input;
 pub mod memory;

@@ -1,8 +1,10 @@
-import { LEGACY_CONTROLS } from "./legacy-controls.js";
+const LEGACY_CONTROLS_DATA = Array.isArray(window.LEGACY_CONTROLS)
+  ? window.LEGACY_CONTROLS
+  : [];
 
 const state = {
   snapshot: null,
-  legacyControls: LEGACY_CONTROLS,
+  legacyControls: LEGACY_CONTROLS_DATA,
   legacyRadioSelection: {},
   legacyActionLog: [],
 };
@@ -17,6 +19,31 @@ const LIVE_LEGACY_KEYS = new Set([
   "GliderForm.cs:ConfigButton",
   "GliderForm.cs:EditProfileButton",
 ]);
+
+const KEYBIND_ACTION_FIELDS = [
+  { action: "move_forward", inputId: "bindMoveForward" },
+  { action: "move_backward", inputId: "bindMoveBackward" },
+  { action: "strafe_left", inputId: "bindStrafeLeft" },
+  { action: "strafe_right", inputId: "bindStrafeRight" },
+  { action: "ascend", inputId: "bindAscend" },
+  { action: "descend", inputId: "bindDescend" },
+  { action: "turn_left", inputId: "bindTurnLeft" },
+  { action: "turn_right", inputId: "bindTurnRight" },
+  { action: "interact", inputId: "bindInteract" },
+  { action: "assist_target", inputId: "bindAssistTarget" },
+];
+
+const ROTATION_SLOT_INPUT_IDS = [
+  "rotSlot1",
+  "rotSlot2",
+  "rotSlot3",
+  "rotSlot4",
+  "rotSlot5",
+  "rotSlot6",
+  "rotSlot7",
+  "rotSlot8",
+  "rotSlot9",
+];
 
 const hasTauri = () => Boolean(window.__TAURI__?.core?.invoke);
 
@@ -34,6 +61,17 @@ function pick(obj, ...keys) {
 
 function normalizeState(appState) {
   const cycleStats = pick(appState, "cycleStats", "cycle_stats") || {};
+  const config = pick(appState, "config") || {};
+  const keybinds = pick(config, "keybinds") || {};
+  const rotationSlotsRaw = pick(keybinds, "rotationSlots", "rotation_slots");
+  const rotationSlots = ROTATION_SLOT_INPUT_IDS.map((_, idx) => {
+    if (Array.isArray(rotationSlotsRaw) && typeof rotationSlotsRaw[idx] !== "undefined") {
+      return String(rotationSlotsRaw[idx]);
+    }
+    return String(idx + 1);
+  });
+  const telemetryEnabledValue = pick(config, "telemetryEnabled", "telemetry_enabled");
+  const memoryPollMsValue = pick(config, "memoryPollMs", "memory_poll_ms");
 
   return {
     memoryAttached: !!pick(appState, "memoryAttached", "memory_attached"),
@@ -43,6 +81,24 @@ function normalizeState(appState) {
     waypointProgress: pick(appState, "waypointProgress", "waypoint_progress"),
     snapshot: pick(appState, "snapshot"),
     statusMessage: pick(appState, "statusMessage", "status_message") || "Ready",
+    config: {
+      telemetryEnabled:
+        typeof telemetryEnabledValue === "boolean" ? telemetryEnabledValue : true,
+      memoryPollMs: Number(memoryPollMsValue) || 2500,
+      keybinds: {
+        moveForward: pick(keybinds, "moveForward", "move_forward") || "W",
+        moveBackward: pick(keybinds, "moveBackward", "move_backward") || "S",
+        strafeLeft: pick(keybinds, "strafeLeft", "strafe_left") || "A",
+        strafeRight: pick(keybinds, "strafeRight", "strafe_right") || "D",
+        ascend: pick(keybinds, "ascend") || "E",
+        descend: pick(keybinds, "descend") || "Q",
+        turnLeft: pick(keybinds, "turnLeft", "turn_left") || "MOUSE_LEFT",
+        turnRight: pick(keybinds, "turnRight", "turn_right") || "MOUSE_RIGHT",
+        interact: pick(keybinds, "interact") || "F",
+        assistTarget: pick(keybinds, "assistTarget", "assist_target") || "T",
+        rotationSlots,
+      },
+    },
     cycleStats: {
       intervalMs: pick(cycleStats, "intervalMs", "interval_ms") || 0,
       cyclesLastMinute: pick(cycleStats, "cyclesLastMinute", "cycles_last_minute") || 0,
@@ -64,6 +120,15 @@ function setStatus(text) {
   if (el) {
     el.textContent = text;
   }
+}
+
+function onClick(id, handler) {
+  const element = document.getElementById(id);
+  if (!element) {
+    console.warn(`Missing clickable element: ${id}`);
+    return;
+  }
+  element.addEventListener("click", handler);
 }
 
 function setTab(tabName) {
@@ -90,6 +155,42 @@ function bindTabs() {
   });
 }
 
+function setInputIfIdle(id, value) {
+  const input = document.getElementById(id);
+  if (!input || document.activeElement === input) {
+    return;
+  }
+  input.value = String(value ?? "");
+}
+
+function setCheckboxIfIdle(id, checked) {
+  const input = document.getElementById(id);
+  if (!input || document.activeElement === input) {
+    return;
+  }
+  input.checked = !!checked;
+}
+
+function renderConfigInputs(config) {
+  setInputIfIdle("pollInput", config.memoryPollMs);
+  setCheckboxIfIdle("telemetryInput", config.telemetryEnabled);
+
+  setInputIfIdle("bindMoveForward", config.keybinds.moveForward);
+  setInputIfIdle("bindMoveBackward", config.keybinds.moveBackward);
+  setInputIfIdle("bindStrafeLeft", config.keybinds.strafeLeft);
+  setInputIfIdle("bindStrafeRight", config.keybinds.strafeRight);
+  setInputIfIdle("bindAscend", config.keybinds.ascend);
+  setInputIfIdle("bindDescend", config.keybinds.descend);
+  setInputIfIdle("bindTurnLeft", config.keybinds.turnLeft);
+  setInputIfIdle("bindTurnRight", config.keybinds.turnRight);
+  setInputIfIdle("bindInteract", config.keybinds.interact);
+  setInputIfIdle("bindAssistTarget", config.keybinds.assistTarget);
+
+  ROTATION_SLOT_INPUT_IDS.forEach((inputId, idx) => {
+    setInputIfIdle(inputId, config.keybinds.rotationSlots[idx]);
+  });
+}
+
 function render(appState) {
   const normalized = normalizeState(appState);
   state.snapshot = normalized;
@@ -101,37 +202,55 @@ function render(appState) {
   const profileText = document.getElementById("profileText");
   const waypointText = document.getElementById("waypointText");
   const pollText = document.getElementById("pollText");
-  const snapshotPreview = document.getElementById("snapshotPreview");
   const diagText = document.getElementById("diagText");
 
-  attachPill.textContent = normalized.memoryAttached ? "Attached" : "Detached";
-  botPill.textContent = normalized.botState;
-  stateText.textContent = normalized.botState;
-  statusText.textContent = normalized.botStatus;
-  profileText.textContent = normalized.activeProfileName || "None";
+  if (attachPill) {
+    attachPill.textContent = normalized.memoryAttached ? "Attached" : "Detached";
+  }
+  if (botPill) {
+    botPill.textContent = normalized.botState;
+  }
+  if (stateText) {
+    stateText.textContent = normalized.botState;
+  }
+  if (statusText) {
+    statusText.textContent = normalized.botStatus;
+  }
+  if (profileText) {
+    profileText.textContent = normalized.activeProfileName || "None";
+  }
 
   const wp = normalized.waypointProgress;
-  waypointText.textContent = Array.isArray(wp) ? `${wp[0]} / ${wp[1]}` : "-";
-  pollText.textContent = `${normalized.cycleStats.intervalMs} ms`;
+  if (waypointText) {
+    waypointText.textContent = Array.isArray(wp) ? `${wp[0]} / ${wp[1]}` : "-";
+  }
+  if (pollText) {
+    pollText.textContent = `${normalized.cycleStats.intervalMs} ms`;
+  }
 
-  snapshotPreview.textContent = normalized.snapshot
-    ? JSON.stringify(normalized.snapshot, null, 2)
-    : "No snapshot yet";
+  renderConfigInputs(normalized.config);
 
   const diagnostics = normalized.snapshot?.diagnostics || [];
-  diagText.textContent = diagnostics.length ? diagnostics.join("\n") : "No diagnostics yet";
+  if (diagText) {
+    diagText.textContent = diagnostics.length ? diagnostics.join("\n") : "No diagnostics yet";
+  }
 
   setStatus(normalized.statusMessage || "Ready");
 }
 
 async function renderFromCommand(command, args = {}) {
-  const result = await invoke(command, args);
-  if (result && typeof result === "object" && result.state) {
-    render(result.state);
-  } else {
-    render(result);
+  try {
+    const result = await invoke(command, args);
+    if (result && typeof result === "object" && result.state) {
+      render(result.state);
+    } else {
+      render(result);
+    }
+    return result;
+  } catch (err) {
+    setStatus(`Command failed (${command}): ${String(err)}`);
+    throw err;
   }
-  return result;
 }
 
 async function refresh() {
@@ -144,54 +263,96 @@ async function refresh() {
 }
 
 function bindActions() {
-  document.getElementById("startBtn").addEventListener("click", async () => {
-    await renderFromCommand("bot_start");
+  const runAction = async (command, args = {}) => {
+    try {
+      await renderFromCommand(command, args);
+      return true;
+    } catch (_err) {
+      // Command errors are surfaced via status bar by renderFromCommand.
+      return false;
+    }
+  };
+
+  onClick("startBtn", async () => {
+    await runAction("bot_start");
   });
 
-  document.getElementById("pauseBtn").addEventListener("click", async () => {
-    await renderFromCommand("bot_pause");
+  onClick("pauseBtn", async () => {
+    await runAction("bot_pause");
   });
 
-  document.getElementById("stopBtn").addEventListener("click", async () => {
-    await renderFromCommand("bot_stop");
+  onClick("stopBtn", async () => {
+    await runAction("bot_stop");
   });
 
-  document.getElementById("loadProfileBtn").addEventListener("click", async () => {
-    const path = document.getElementById("profilePath").value.trim();
-    await renderFromCommand("profile_load", { path });
+  onClick("loadProfileBtn", async () => {
+    const path = document.getElementById("profilePath")?.value.trim() || "";
+    await runAction("profile_load", { path });
   });
 
-  document.getElementById("clearProfileBtn").addEventListener("click", async () => {
-    await renderFromCommand("profile_clear");
+  onClick("clearProfileBtn", async () => {
+    await runAction("profile_clear");
   });
 
-  document.getElementById("attachPidBtn").addEventListener("click", async () => {
-    const pid = Number(document.getElementById("pidInput").value);
-    await renderFromCommand("memory_attach_pid", { pid });
+  onClick("attachPidBtn", async () => {
+    const pid = Number(document.getElementById("pidInput")?.value);
+    await runAction("memory_attach_pid", { pid });
   });
 
-  document.getElementById("autoAttachBtn").addEventListener("click", async () => {
-    const result = await invoke("memory_attach_wow");
-    if (result.state) {
-      render(result.state);
-      document.getElementById("pidInput").value = String(result.pid);
-    } else {
-      render(result);
+  onClick("autoAttachBtn", async () => {
+    try {
+      const result = await invoke("memory_attach_wow");
+      if (result.state) {
+        render(result.state);
+        const pidInput = document.getElementById("pidInput");
+        if (pidInput) {
+          pidInput.value = String(result.pid);
+        }
+      } else {
+        render(result);
+      }
+    } catch (err) {
+      setStatus(`Command failed (memory_attach_wow): ${String(err)}`);
     }
   });
 
-  document.getElementById("detachBtn").addEventListener("click", async () => {
-    await renderFromCommand("memory_detach");
+  onClick("detachBtn", async () => {
+    await runAction("memory_detach");
   });
 
-  document.getElementById("setPollBtn").addEventListener("click", async () => {
-    const intervalMs = Number(document.getElementById("pollInput").value);
-    await renderFromCommand("settings_set_poll_interval", { intervalMs });
+  onClick("setPollBtn", async () => {
+    const intervalMs = Number(document.getElementById("pollInput")?.value);
+    await runAction("settings_set_poll_interval", { intervalMs });
   });
 
-  document.getElementById("setTelemetryBtn").addEventListener("click", async () => {
-    const telemetryEnabled = document.getElementById("telemetryInput").checked;
-    await renderFromCommand("settings_set_telemetry", { telemetryEnabled });
+  onClick("setTelemetryBtn", async () => {
+    const telemetryEnabled = !!document.getElementById("telemetryInput")?.checked;
+    await runAction("settings_set_telemetry", { telemetryEnabled });
+  });
+
+  onClick("applyKeybindsBtn", async () => {
+    for (const { action, inputId } of KEYBIND_ACTION_FIELDS) {
+      const key = document.getElementById(inputId)?.value.trim() || "";
+      const ok = await runAction("settings_set_keybind", { action, key });
+      if (!ok) {
+        return;
+      }
+    }
+
+    setStatus("Keybinds updated");
+  });
+
+  onClick("applyRotationBtn", async () => {
+    for (let idx = 0; idx < ROTATION_SLOT_INPUT_IDS.length; idx += 1) {
+      const slot = idx + 1;
+      const key = document.getElementById(ROTATION_SLOT_INPUT_IDS[idx])?.value.trim() || "";
+      const ok = await runAction("settings_set_rotation_slot", { slot, key });
+      if (!ok) {
+        return;
+      }
+    }
+
+    setStatus("Rotation slots updated");
   });
 }
 
@@ -477,6 +638,19 @@ function mockState() {
     config: {
       telemetryEnabled: true,
       memoryPollMs: 2500,
+      keybinds: {
+        moveForward: "W",
+        moveBackward: "S",
+        strafeLeft: "A",
+        strafeRight: "D",
+        ascend: "E",
+        descend: "Q",
+        turnLeft: "MOUSE_LEFT",
+        turnRight: "MOUSE_RIGHT",
+        interact: "F",
+        assistTarget: "T",
+        rotationSlots: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      },
     },
     statusMessage: "Frontend shell running in mock mode",
     memoryAttached: false,
@@ -593,6 +767,73 @@ async function mockInvoke(command, args) {
         statusMessage: `Telemetry ${args.telemetryEnabled ? "enabled" : "disabled"}`,
       };
       return mock;
+    case "settings_set_keybind": {
+      const action = String(args.action || "").trim().toLowerCase();
+      const key = String(args.key || "").trim().toUpperCase();
+      const actionToField = {
+        move_forward: "moveForward",
+        move_backward: "moveBackward",
+        strafe_left: "strafeLeft",
+        strafe_right: "strafeRight",
+        ascend: "ascend",
+        descend: "descend",
+        turn_left: "turnLeft",
+        turn_right: "turnRight",
+        interact: "interact",
+        assist_target: "assistTarget",
+      };
+
+      if (!actionToField[action]) {
+        throw new Error(`Unknown keybind action '${action}'`);
+      }
+
+      if (!key) {
+        throw new Error("Key binding cannot be empty");
+      }
+
+      mock = {
+        ...mock,
+        config: {
+          ...mock.config,
+          keybinds: {
+            ...mock.config.keybinds,
+            [actionToField[action]]: key,
+          },
+        },
+        statusMessage: `Updated keybind '${action}' -> ${key}`,
+      };
+
+      return mock;
+    }
+    case "settings_set_rotation_slot": {
+      const slot = Number(args.slot);
+      const key = String(args.key || "").trim().toUpperCase();
+
+      if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
+        throw new Error("Rotation slot must be in range 1..=9");
+      }
+
+      if (!key) {
+        throw new Error("Key binding cannot be empty");
+      }
+
+      const rotationSlots = [...mock.config.keybinds.rotationSlots];
+      rotationSlots[slot - 1] = key;
+
+      mock = {
+        ...mock,
+        config: {
+          ...mock.config,
+          keybinds: {
+            ...mock.config.keybinds,
+            rotationSlots,
+          },
+        },
+        statusMessage: `Updated rotation slot ${slot} -> ${key}`,
+      };
+
+      return mock;
+    }
     default:
       return mock;
   }
@@ -600,9 +841,11 @@ async function mockInvoke(command, args) {
 
 function initRuntimeHint() {
   const hint = document.getElementById("runtimeHint");
-  hint.textContent = hasTauri()
-    ? "Connected to Tauri runtime"
-    : "Mock mode (open in Tauri to enable Rust backend)";
+  if (hint) {
+    hint.textContent = hasTauri()
+      ? "Connected to Tauri runtime"
+      : "Mock mode (open in Tauri to enable Rust backend)";
+  }
 }
 
 function startPolling() {

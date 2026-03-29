@@ -63,7 +63,11 @@ fn draw_entity_card(
     hostility: Option<&str>,
 ) {
     let is_hostile = hostility == Some("Hostile");
-    let border_col = if is_hostile { theme::ACCENT_RED } else { theme::GLASS_BORDER };
+    let border_col = if is_hostile {
+        theme::ACCENT_RED
+    } else {
+        theme::GLASS_BORDER
+    };
 
     let resp = Frame::new()
         .fill(theme::GLASS_FILL_RAISED)
@@ -75,9 +79,15 @@ fn draw_entity_card(
 
             // Header row
             ui.horizontal(|ui| {
-                ui.label(RichText::new(header).color(theme::TEXT_DIM).size(10.0).strong());
+                ui.label(
+                    RichText::new(header)
+                        .color(theme::TEXT_DIM)
+                        .size(10.0)
+                        .strong(),
+                );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let dot_col = if name.is_some() && name != Some("Unknown") && name != Some("—") {
+                    let dot_col = if name.is_some() && name != Some("Unknown") && name != Some("—")
+                    {
                         theme::ACCENT_GREEN
                     } else {
                         theme::TEXT_DIM
@@ -113,8 +123,14 @@ fn draw_entity_card(
             .flatten()
             .collect();
 
-            let meta_str = if meta.is_empty() { "—".to_string() } else { meta.join("  ·  ") };
-            let meta_col = hostility.map(hostility_color).unwrap_or(theme::TEXT_SECONDARY);
+            let meta_str = if meta.is_empty() {
+                "—".to_string()
+            } else {
+                meta.join("  ·  ")
+            };
+            let meta_col = hostility
+                .map(hostility_color)
+                .unwrap_or(theme::TEXT_SECONDARY);
 
             ui.label(RichText::new(meta_str).color(meta_col).size(12.0));
             ui.add_space(10.0);
@@ -132,9 +148,18 @@ fn draw_empty_target_card(ui: &mut egui::Ui) {
         .stroke(Stroke::new(1.0, theme::GLASS_BORDER))
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
-            ui.label(RichText::new("TARGET").color(theme::TEXT_DIM).size(10.0).strong());
+            ui.label(
+                RichText::new("TARGET")
+                    .color(theme::TEXT_DIM)
+                    .size(10.0)
+                    .strong(),
+            );
             ui.add_space(12.0);
-            ui.label(RichText::new("No target selected").color(theme::TEXT_DIM).size(14.0));
+            ui.label(
+                RichText::new("No target selected")
+                    .color(theme::TEXT_DIM)
+                    .size(14.0),
+            );
             ui.add_space(10.0);
             draw_hp_bar(ui, None, None);
         });
@@ -188,11 +213,16 @@ fn draw_status_controls_card(
 
                 // Start
                 let start_resp = ui.add(
-                    egui::Button::new(RichText::new("Start").color(theme::ACCENT_GREEN).size(14.0).strong())
-                        .fill(Color32::from_rgba_premultiplied(12, 48, 28, 200))
-                        .stroke(Stroke::new(1.0, theme::ACCENT_GREEN))
-                        .min_size(egui::vec2(btn_w, 44.0))
-                        .corner_radius(CornerRadius::same(22)),
+                    egui::Button::new(
+                        RichText::new("Start")
+                            .color(theme::ACCENT_GREEN)
+                            .size(14.0)
+                            .strong(),
+                    )
+                    .fill(Color32::from_rgba_premultiplied(12, 48, 28, 200))
+                    .stroke(Stroke::new(1.0, theme::ACCENT_GREEN))
+                    .min_size(egui::vec2(btn_w, 44.0))
+                    .corner_radius(CornerRadius::same(22)),
                 );
                 theme::paint_button_top_glint(ui, start_resp.rect);
                 if start_resp.clicked() {
@@ -204,11 +234,16 @@ fn draw_status_controls_card(
 
                 // Pause
                 let pause_resp = ui.add(
-                    egui::Button::new(RichText::new("Pause").color(theme::ACCENT_YELLOW).size(14.0).strong())
-                        .fill(Color32::from_rgba_premultiplied(50, 38, 10, 200))
-                        .stroke(Stroke::new(1.0, theme::ACCENT_YELLOW))
-                        .min_size(egui::vec2(btn_w, 44.0))
-                        .corner_radius(CornerRadius::same(22)),
+                    egui::Button::new(
+                        RichText::new("Pause")
+                            .color(theme::ACCENT_YELLOW)
+                            .size(14.0)
+                            .strong(),
+                    )
+                    .fill(Color32::from_rgba_premultiplied(50, 38, 10, 200))
+                    .stroke(Stroke::new(1.0, theme::ACCENT_YELLOW))
+                    .min_size(egui::vec2(btn_w, 44.0))
+                    .corner_radius(CornerRadius::same(22)),
                 );
                 theme::paint_button_top_glint(ui, pause_resp.rect);
                 if pause_resp.clicked() {
@@ -220,11 +255,16 @@ fn draw_status_controls_card(
 
                 // Stop
                 let stop_resp = ui.add(
-                    egui::Button::new(RichText::new("Stop").color(theme::ACCENT_RED).size(14.0).strong())
-                        .fill(Color32::from_rgba_premultiplied(50, 12, 12, 200))
-                        .stroke(Stroke::new(1.0, theme::ACCENT_RED))
-                        .min_size(egui::vec2(btn_w, 44.0))
-                        .corner_radius(CornerRadius::same(22)),
+                    egui::Button::new(
+                        RichText::new("Stop")
+                            .color(theme::ACCENT_RED)
+                            .size(14.0)
+                            .strong(),
+                    )
+                    .fill(Color32::from_rgba_premultiplied(50, 12, 12, 200))
+                    .stroke(Stroke::new(1.0, theme::ACCENT_RED))
+                    .min_size(egui::vec2(btn_w, 44.0))
+                    .corner_radius(CornerRadius::same(22)),
                 );
                 theme::paint_button_top_glint(ui, stop_resp.rect);
                 if stop_resp.clicked() {
@@ -237,7 +277,11 @@ fn draw_status_controls_card(
 
             // Stats row
             ui.horizontal_wrapped(|ui| {
-                stat_chip(ui, "Cycles/min", &cycle_stats.cycles_last_minute.to_string());
+                stat_chip(
+                    ui,
+                    "Cycles/min",
+                    &cycle_stats.cycles_last_minute.to_string(),
+                );
                 stat_chip(ui, "Last", &format!("{} ms", cycle_stats.last_cycle_ms));
                 stat_chip(ui, "Total", &cycle_stats.total_cycles.to_string());
             });
@@ -265,7 +309,12 @@ pub fn draw_hp_bar(ui: &mut egui::Ui, current: Option<u32>, max: Option<u32>) {
     let r = CornerRadius::same(HP_BAR_HEIGHT as u8 / 2);
 
     painter.rect_filled(rect, r, theme::GLASS_FILL_INSET);
-    painter.rect_stroke(rect, r, Stroke::new(1.0, theme::GLASS_BORDER), egui::StrokeKind::Inside);
+    painter.rect_stroke(
+        rect,
+        r,
+        Stroke::new(1.0, theme::GLASS_BORDER),
+        egui::StrokeKind::Inside,
+    );
 
     let ratio = match (current, max) {
         (Some(c), Some(m)) if m > 0 => (c as f32 / m as f32).clamp(0.0, 1.0),
@@ -277,7 +326,12 @@ pub fn draw_hp_bar(ui: &mut egui::Ui, current: Option<u32>, max: Option<u32>) {
         let mut fill = rect;
         fill.max.x = rect.min.x + rect.width() * ratio;
         let fill_r = if ratio < 0.97 {
-            CornerRadius { nw: r.nw, sw: r.sw, ne: 4, se: 4 }
+            CornerRadius {
+                nw: r.nw,
+                sw: r.sw,
+                ne: 4,
+                se: 4,
+            }
         } else {
             r
         };
@@ -287,7 +341,12 @@ pub fn draw_hp_bar(ui: &mut egui::Ui, current: Option<u32>, max: Option<u32>) {
         hi.max.y = hi.min.y + 5.0;
         painter.rect_filled(
             hi,
-            CornerRadius { nw: r.nw, sw: 0, ne: 3, se: 0 },
+            CornerRadius {
+                nw: r.nw,
+                sw: 0,
+                ne: 3,
+                se: 0,
+            },
             Color32::from_rgba_premultiplied(255, 255, 255, 35),
         );
     }
@@ -316,7 +375,12 @@ fn stat_chip(ui: &mut egui::Ui, key: &str, val: &str) {
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(key).color(theme::TEXT_DIM).size(10.0));
-                ui.label(RichText::new(val).color(theme::TEXT_SECONDARY).size(11.0).strong());
+                ui.label(
+                    RichText::new(val)
+                        .color(theme::TEXT_SECONDARY)
+                        .size(11.0)
+                        .strong(),
+                );
             });
         });
 }
@@ -339,8 +403,16 @@ fn hostility_color(hostility: &str) -> egui::Color32 {
 
 pub fn race_name(race_id: u8) -> &'static str {
     match race_id {
-        1 => "Human", 2 => "Orc", 3 => "Dwarf", 4 => "Night Elf",
-        5 => "Undead", 6 => "Tauren", 7 => "Gnome", 8 => "Troll",
-        10 => "Blood Elf", 11 => "Draenei", _ => "Unknown",
+        1 => "Human",
+        2 => "Orc",
+        3 => "Dwarf",
+        4 => "Night Elf",
+        5 => "Undead",
+        6 => "Tauren",
+        7 => "Gnome",
+        8 => "Troll",
+        10 => "Blood Elf",
+        11 => "Draenei",
+        _ => "Unknown",
     }
 }
