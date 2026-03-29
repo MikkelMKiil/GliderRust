@@ -9,9 +9,7 @@ fn main() -> eframe::Result<()> {
 
     let options = build_native_options();
 
-    tracing::info!(
-        "Starting GliderRust with wgpu renderer (Vulkan-first adapter selection)"
-    );
+    tracing::info!("Starting GliderRust — wgpu renderer");
 
     eframe::run_native(
         "GliderRust",
@@ -24,17 +22,25 @@ fn build_native_options() -> NativeOptions {
     let mut options = NativeOptions::default();
     options.renderer = Renderer::Wgpu;
 
+    // Fixed 540 × 960 (9:16) logical-pixel window — scales automatically on high-DPI displays
+    options.viewport = egui::ViewportBuilder::default()
+        .with_title("GliderRust")
+        .with_inner_size([540.0, 960.0])
+        .with_min_inner_size([540.0, 960.0])
+        .with_resizable(false);
+
     let mut wgpu_options = egui_wgpu::WgpuConfiguration::default();
     if let egui_wgpu::WgpuSetup::CreateNew(create_new) = &mut wgpu_options.wgpu_setup {
-        create_new.instance_descriptor.backends = wgpu::Backends::VULKAN | wgpu::Backends::DX12;
+        create_new.instance_descriptor.backends =
+            wgpu::Backends::VULKAN | wgpu::Backends::DX12;
         create_new.power_preference = wgpu::PowerPreference::HighPerformance;
         create_new.native_adapter_selector = Some(Arc::new(|adapters, _surface| {
             adapters
                 .iter()
-                .find(|adapter| adapter.get_info().backend == wgpu::Backend::Vulkan)
+                .find(|a| a.get_info().backend == wgpu::Backend::Vulkan)
                 .cloned()
                 .or_else(|| adapters.first().cloned())
-                .ok_or_else(|| "No compatible graphics adapter available".to_string())
+                .ok_or_else(|| "No compatible graphics adapter".to_string())
         }));
     }
     options.wgpu_options = wgpu_options;

@@ -633,57 +633,67 @@ fn lookup_player_name_by_guid(
     guid: u64,
     diagnostics: &mut Vec<String>,
 ) -> Option<String> {
-    let names_store_base = WOTLK_3_3_5A.player_names_store_addr + 0x8;
-    let first_node_addr = names_store_base + WOTLK_3_3_5A.player_names_first_node_offset;
+    // WoTLK 3.3.5a NameCache is a hash table.
+    // store + 0x1C = pointer to bucket array (nameBase)
+    // store + 0x24 = nameMask (bucket_count - 1)
+    // Each bucket entry is a u32 pointer to the first node in the chain.
+    // Node layout: +0x0C = next ptr (u32), +0x10 = GUID (u64), +0x20 = name (c-string)
+    let store = WOTLK_3_3_5A.player_names_store_addr;
 
-    let mut node = read_u32(handle, first_node_addr)
-        .map(|value| value as usize)
-        .ok()
-        .filter(|value| *value != 0)?;
+    let name_base = match read_u32(handle, store + 0x1C) {
+        Ok(v) if v > 0x1000 => v as usize,
+        _ => {
+            diagnostics.push(format!("name lookup: nameBase invalid at store=0x{store:08X}"));
+            return None;
+        }
+    };
 
-    let mut steps = 0usize;
-    while node != 0 && (node & 1) == 0 && node != 28 && steps < 16384 {
-        let node_guid = match read_u64(handle, node + WOTLK_3_3_5A.player_names_guid_offset_primary)
-        {
-            Ok(value) => value,
-            Err(_) => {
-                diagnostics.push(format!(
-                    "name lookup failed to read guid at node=0x{node:08X}"
-                ));
-                break;
-            }
+    let name_mask = match read_u32(handle, store + 0x24) {
+        Ok(v) => (v as usize).min(0xFFF),
+        _ => {
+            diagnostics.push("name lookup: failed to read nameMask".to_string());
+            return None;
+        }
+    };
+
+    diagnostics.push(format!(
+        "trace name_lookup nameBase=0x{name_base:08X} nameMask=0x{name_mask:X} guid=0x{guid:016X}"
+    ));
+
+    for i in 0..=name_mask {
+        let mut node = match read_u32(handle, name_base + i * 4) {
+            Ok(v) if v > 0x1000 => v as usize,
+            _ => continue,
         };
 
-        if node_guid == guid {
-            if let Ok(name) = read_c_string(
-                handle,
-                node + WOTLK_3_3_5A.player_names_name_offset,
-                32,
-            ) {
-                if !name.is_empty() {
-                    diagnostics.push(format!(
-                        "trace name_lookup matched guid=0x{guid:016X} name={name}"
-                    ));
-                    return Some(name);
+        let mut chain_steps = 0usize;
+        while node > 0x1000 && chain_steps < 256 {
+            let node_guid = match read_u64(handle, node + WOTLK_3_3_5A.player_names_guid_offset_primary) {
+                Ok(v) => v,
+                Err(_) => break,
+            };
+
+            if node_guid == guid {
+                if let Ok(name) = read_c_string(handle, node + WOTLK_3_3_5A.player_names_name_offset, 48) {
+                    if !name.is_empty() {
+                        diagnostics.push(format!(
+                            "trace name_lookup matched bucket={i} guid=0x{guid:016X} name={name}"
+                        ));
+                        return Some(name);
+                    }
                 }
             }
-        }
 
-        let next = match read_u32(handle, node + WOTLK_3_3_5A.player_names_next_offset) {
-            Ok(value) => value as usize,
-            Err(_) => {
-                diagnostics.push(format!(
-                    "name lookup failed to read next node at node=0x{node:08X}"
-                ));
+            let next = match read_u32(handle, node + WOTLK_3_3_5A.player_names_next_offset) {
+                Ok(v) => v as usize,
+                Err(_) => break,
+            };
+            if next == node || next <= 0x1000 {
                 break;
             }
-        };
-        if next == 0 || next == node {
-            break;
+            node = next;
+            chain_steps += 1;
         }
-
-        node = next;
-        steps += 1;
     }
 
     None

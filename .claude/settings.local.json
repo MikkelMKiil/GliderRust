@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(cargo check:*)",
+      "Bash(find C:/Users/kiilo/.cargo/registry/src -name style.rs -path *egui-0.34*)",
+      "Bash(cargo build:*)",
+      "Bash(head -10 grep -n \"pub struct Mesh\\\\|pub enum Shape\" C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.34.1/src/shapes/shape.rs)",
+      "Bash(head -10 grep -rn \"Shape::Mesh\\\\|Mesh\\(\" \"C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.34.1/src\" --include=\"*.rs\")",
+      "Bash(head -15 grep -n \"fn mesh\\\\|pub fn\" \"C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.34.1/src/shapes/shape.rs\")",
+      "Bash(head -20 grep -n \"pub enum Direction\\\\|Direction::\" \"C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.34.1/src/shapes/shape.rs\")",
+      "WebFetch(domain:liquidglass.shop)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.apple.com)",
+      "WebFetch(domain:medium.com)",
+      "Bash(head -20 grep -n \"fn with_inner_size\\\\|fn with_resizable\\\\|fn with_min\\\\|fn with_max\" C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/eframe-0.34.0/src/native/winit/epi_integration.rs)",
+      "Bash(xargs grep:*)",
+      "Bash(head -15 find C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ -maxdepth 1 -name eframe*)",
+      "Bash(head -10 grep -rn \"fn with_inner_size\\\\|with_resizable\\\\|ViewportBuilder\" \"C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/eframe-0.34.1/src\" --include=\"*.rs\")",
+      "Bash(head -15 grep -n \"window_margin\\\\|pub spacing\" \"C:/Users/kiilo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/egui-0.34.1/src/style.rs\")"
+    ]
+  }
+}
